@@ -3,6 +3,8 @@ import axios from 'axios';
 import './PDFUploader.css';
 import ProgressBar from './ProgressBar';
 
+const API = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const PDFUploader = ({ darkMode }) => {
   const [file, setFile] = useState(null);
   const [password, setPassword] = useState('');
@@ -23,17 +25,17 @@ const PDFUploader = ({ darkMode }) => {
 
   const handleFileSelection = (selectedFile) => {
     if (!selectedFile) return;
-    
+
     if (selectedFile.type !== 'application/pdf') {
       setError('Please upload a valid PDF file.');
       return;
     }
-    
+
     if (selectedFile.size > 10 * 1024 * 1024) {
       setError('File size must be less than 10MB.');
       return;
     }
-    
+
     setFile(selectedFile);
     setError('');
     setSummary(null);
@@ -108,7 +110,7 @@ const PDFUploader = ({ darkMode }) => {
         formData.append('password', password);
       }
       formData.append('outputFormat', outputFormat);
-      
+
       // Add selected sheets for Excel format
       if (outputFormat === 'excel') {
         const sheets = Object.keys(selectedSheets).filter(key => selectedSheets[key]);
@@ -118,7 +120,7 @@ const PDFUploader = ({ darkMode }) => {
       setStatus('Extracting text from PDF...');
       setProgress(30);
 
-      const response = await axios.post('/api/extract-cas', formData, {
+      const response = await axios.post(`${API}/api/extract-cas`, formData, {
         responseType: 'blob',
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -128,6 +130,7 @@ const PDFUploader = ({ darkMode }) => {
           setProgress(Math.min(percentCompleted, 25));
         }
       });
+
 
       setStatus('Parsing portfolio data...');
       setProgress(60);
@@ -139,16 +142,16 @@ const PDFUploader = ({ darkMode }) => {
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      const statusText = outputFormat === 'excel' ? 'Generating Excel report...' : 
-                         outputFormat === 'json' ? 'Generating JSON file...' : 
-                         'Generating text file...';
+      const statusText = outputFormat === 'excel' ? 'Generating Excel report...' :
+        outputFormat === 'json' ? 'Generating JSON file...' :
+          'Generating text file...';
       setStatus(statusText);
       setProgress(95);
 
       // Determine MIME type based on format
       let mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       let defaultFilename = 'CAS_Report.xlsx';
-      
+
       if (outputFormat === 'json') {
         mimeType = 'application/json';
         defaultFilename = 'CAS_Data.json';
@@ -162,7 +165,7 @@ const PDFUploader = ({ darkMode }) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      
+
       // Extract filename from response headers or use default
       const contentDisposition = response.headers['content-disposition'];
       let filename = defaultFilename;
@@ -172,11 +175,11 @@ const PDFUploader = ({ darkMode }) => {
           filename = filenameMatch[1].replace(/['"]/g, '');
         }
       }
-      
+
       link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
-      
+
       // Cleanup
       setTimeout(() => {
         link.remove();
@@ -184,8 +187,8 @@ const PDFUploader = ({ darkMode }) => {
       }, 100);
 
       const completeText = outputFormat === 'excel' ? 'Complete! Excel file downloaded.' :
-                          outputFormat === 'json' ? 'Complete! JSON file downloaded.' :
-                          'Complete! Text file downloaded.';
+        outputFormat === 'json' ? 'Complete! JSON file downloaded.' :
+          'Complete! Text file downloaded.';
       setStatus(completeText);
       setProgress(100);
 
@@ -204,9 +207,9 @@ const PDFUploader = ({ darkMode }) => {
 
     } catch (err) {
       console.error('Upload error:', err);
-      
+
       let errorMessage = 'Failed to extract CAS data. Please try again.';
-      
+
       if (err.response) {
         if (err.response.status === 400) {
           errorMessage = 'Invalid file or missing data. Please upload a valid CAS PDF.';
@@ -223,7 +226,7 @@ const PDFUploader = ({ darkMode }) => {
       } else if (err.request) {
         errorMessage = 'Cannot connect to server. Please ensure the backend is running.';
       }
-      
+
       setError(errorMessage);
       setStatus('');
       setProgress(0);
@@ -252,7 +255,7 @@ const PDFUploader = ({ darkMode }) => {
               <div className="upload-icon">📄</div>
               <h3>Drag & Drop PDF Here</h3>
               <p>or</p>
-              <button 
+              <button
                 className="browse-button"
                 onClick={handleButtonClick}
                 disabled={loading}
