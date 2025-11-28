@@ -769,7 +769,7 @@ npm test -- --silent
 
 ---
 
-**Made with ❤️ by  Tanish Goel**
+**Made with ❤️**
 
-**Version**: 1.4.0  
-**Last Updated**: November 28, 2025
+**Version**: 1.0.0  
+**Last Updated**: November 29, 2025
