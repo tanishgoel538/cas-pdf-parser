@@ -19,7 +19,7 @@ export const validatePdfFile = async (file, password = '') => {
       headers: {
         'Content-Type': 'multipart/form-data'
       },
-      timeout: 10000 // 10 second timeout
+      timeout: 30000 // 30 second timeout (PDF validation can be slow)
     });
 
     return {
@@ -28,6 +28,15 @@ export const validatePdfFile = async (file, password = '') => {
       error: null
     };
   } catch (error) {
+    // Handle timeout errors
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      return {
+        needsPassword: false,
+        isValid: false,
+        error: 'Validation timeout - file may be too large or corrupted'
+      };
+    }
+    
     if (error.response) {
       const data = error.response.data;
       
@@ -55,10 +64,11 @@ export const validatePdfFile = async (file, password = '') => {
       };
     }
     
+    // Network or other errors
     return {
       needsPassword: false,
       isValid: false,
-      error: 'Failed to validate file'
+      error: 'Failed to validate file - please try again'
     };
   }
 };
