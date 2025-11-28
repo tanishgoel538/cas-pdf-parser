@@ -415,33 +415,6 @@ const PDFUploader = ({ darkMode }) => {
             </div>
           </div>
         )}
-
-        <div className="features-section">
-          <h3>What You'll Get:</h3>
-          <ul className="features-list">
-            <li>
-              <span className="feature-icon">📊</span>
-              <div>
-                <strong>Portfolio Summary</strong>
-                <p>Overview by fund house with cost and market values</p>
-              </div>
-            </li>
-            <li>
-              <span className="feature-icon">💰</span>
-              <div>
-                <strong>Detailed Transactions</strong>
-                <p>Complete history with NAV, units, and balances (4 decimal precision)</p>
-              </div>
-            </li>
-            <li>
-              <span className="feature-icon">📈</span>
-              <div>
-                <strong>MF Holdings</strong>
-                <p>Current holdings with folio details, PAN, ISIN, and advisor info</p>
-              </div>
-            </li>
-          </ul>
-        </div>
       </div>
     </div>
   );

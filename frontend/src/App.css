@@ -2,18 +2,28 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .App-header {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
-  padding: 1.5rem 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all 0.3s ease;
 }
 
 .App.dark-mode .App-header {
-  background: rgba(30, 30, 50, 0.95);
-  color: #ffffff;
+  background: rgba(26, 26, 46, 0.98);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .header-content {
@@ -25,99 +35,412 @@
 }
 
 .title-section h1 {
-  font-size: 2rem;
-  color: #4472C4;
-  margin-bottom: 0.25rem;
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title-section h1 .title-icon {
+  background: none;
+  -webkit-text-fill-color: initial;
+  font-size: 1.8rem;
 }
 
 .App.dark-mode .title-section h1 {
-  color: #7B9FFF;
+  background: linear-gradient(135deg, #a8b9ff 0%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.App.dark-mode .title-section h1 .title-icon {
+  background: none;
+  -webkit-text-fill-color: initial;
 }
 
 .title-section p {
-  font-size: 1rem;
-  color: #666;
-  font-weight: 300;
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0.2rem 0 0 0;
+  font-weight: 500;
 }
 
 .App.dark-mode .title-section p {
-  color: #aaa;
+  color: #b8b8d1;
 }
 
 .theme-toggle {
-  background: none;
-  border: 2px solid #4472C4;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  font-size: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.3rem;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-size: 1.3rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .theme-toggle:hover {
-  transform: scale(1.1);
-  background: #4472C4;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.theme-toggle:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .App.dark-mode .theme-toggle {
-  border-color: #7B9FFF;
+  background: linear-gradient(135deg, #a8b9ff 0%, #c084fc 100%);
+  box-shadow: 0 4px 15px rgba(168, 185, 255, 0.3);
 }
 
 .App.dark-mode .theme-toggle:hover {
-  background: #7B9FFF;
+  box-shadow: 0 6px 20px rgba(168, 185, 255, 0.4);
 }
 
 .App-main {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  padding: 2rem;
+  padding: 1.5rem 2rem;
+  animation: slideUp 0.6s ease-out;
+  overflow: hidden;
+}
+
+.main-container {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  max-width: 1400px;
+  align-items: stretch;
+}
+
+.features-panel {
+  flex: 0 0 350px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.App.dark-mode .features-panel {
+  background: rgba(26, 26, 46, 0.95);
+}
+
+.features-panel h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.App.dark-mode .features-panel h2 {
+  background: linear-gradient(135deg, #a8b9ff 0%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.feature-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: translateX(5px);
+}
+
+.App.dark-mode .feature-item {
+  background: rgba(168, 185, 255, 0.1);
+}
+
+.App.dark-mode .feature-item:hover {
+  background: rgba(168, 185, 255, 0.15);
+}
+
+.feature-item .feature-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.feature-item strong {
+  display: block;
+  color: #333;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+}
+
+.App.dark-mode .feature-item strong {
+  color: #fff;
+}
+
+.feature-item p {
+  margin: 0;
+  color: #666;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.App.dark-mode .feature-item p {
+  color: #b8b8d1;
+}
+
+.uploader-panel {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .App-footer {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  padding: 1.5rem;
+  padding: 0.8rem;
   text-align: center;
   color: #666;
-  font-size: 0.9rem;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  margin-top: auto;
 }
 
 .App.dark-mode .App-footer {
-  background: rgba(30, 30, 50, 0.9);
-  color: #aaa;
+  background: rgba(26, 26, 46, 0.95);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .App-footer p {
-  margin: 0.25rem 0;
+  margin: 0.2rem 0;
+  font-size: 0.85rem;
+}
+
+.App.dark-mode .App-footer p {
+  color: #b8b8d1;
 }
 
 .App-footer .version {
-  font-size: 0.8rem;
-  opacity: 0.7;
+  font-size: 0.75rem;
+  color: #999;
+  font-weight: 500;
+}
+
+.App.dark-mode .App-footer .version {
+  color: #7a7a9a;
 }
 
 /* Responsive design */
+@media (max-width: 1400px) {
+  .main-container {
+    max-width: 100%;
+  }
+
+  .features-panel {
+    flex: 0 0 320px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .App-main {
+    padding: 1.5rem 1rem;
+  }
+
+  .main-container {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .features-panel {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .feature-item {
+    flex-direction: row;
+  }
+
+  .uploader-panel {
+    width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .App-header {
-    padding: 1rem;
+    padding: 0.8rem 1rem;
   }
   
   .header-content {
-    flex-direction: column;
-    gap: 1rem;
+    flex-direction: row;
+    gap: 0.5rem;
   }
   
   .title-section h1 {
     font-size: 1.5rem;
   }
+
+  .title-section p {
+    font-size: 0.8rem;
+  }
   
   .App-main {
+    padding: 1rem 0.75rem;
+  }
+
+  .main-container {
+    gap: 1rem;
+  }
+
+  .features-panel {
     padding: 1rem;
+  }
+
+  .features-panel h2 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .feature-item {
+    padding: 0.75rem;
+  }
+
+  .feature-item .feature-icon {
+    font-size: 1.5rem;
+  }
+
+  .feature-item strong {
+    font-size: 0.9rem;
+  }
+
+  .feature-item p {
+    font-size: 0.8rem;
+  }
+
+  .theme-toggle {
+    padding: 0.5rem 1rem;
+    font-size: 1.1rem;
+  }
+
+  .App-footer {
+    padding: 0.6rem;
+  }
+
+  .App-footer p {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .App-header {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .title-section h1 {
+    font-size: 1.2rem;
+  }
+
+  .title-section p {
+    font-size: 0.7rem;
+  }
+
+  .theme-toggle {
+    padding: 0.4rem 0.8rem;
+    font-size: 1rem;
+  }
+
+  .App-main {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .main-container {
+    gap: 0.75rem;
+  }
+
+  .features-panel {
+    padding: 0.75rem;
+  }
+
+  .features-panel h2 {
+    font-size: 1rem;
+  }
+
+  .feature-item {
+    padding: 0.6rem;
+    gap: 0.6rem;
+  }
+
+  .feature-item .feature-icon {
+    font-size: 1.3rem;
+  }
+
+  .feature-item strong {
+    font-size: 0.85rem;
+  }
+
+  .feature-item p {
+    font-size: 0.75rem;
+  }
+
+  .App-footer {
+    padding: 0.5rem;
+  }
+
+  .App-footer p {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .title-section h1 {
+    font-size: 1rem;
+  }
+
+  .title-section p {
+    display: none;
+  }
+
+  .theme-toggle {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .features-panel h2 {
+    font-size: 0.9rem;
+  }
+
+  .feature-item {
+    padding: 0.5rem;
   }
 }

@@ -18,7 +18,7 @@ function App() {
       <header className="App-header">
         <div className="header-content">
           <div className="title-section">
-            <h1>📊 ITR Complete</h1>
+            <h1><span className="title-icon">📊</span> ITR Complete</h1>
             <p>CAS Data Extractor & Analyzer</p>
           </div>
           <button
@@ -32,12 +32,40 @@ function App() {
       </header>
       
       <main className="App-main">
-        <PDFUploader darkMode={darkMode} />
+        <div className="main-container">
+           <div className="uploader-panel">
+            <PDFUploader darkMode={darkMode} />
+          </div>
+          <div className="features-panel">
+            <h2>What You'll Get</h2>
+            <div className="feature-item">
+              <span className="feature-icon">📊</span>
+              <div>
+                <strong>Portfolio Summary</strong>
+                <p>Overview by fund house with cost and market values</p>
+              </div>
+            </div>
+            <div className="feature-item">
+              <span className="feature-icon">💰</span>
+              <div>
+                <strong>Detailed Transactions</strong>
+                <p>Complete history with NAV, units, and balances</p>
+              </div>
+            </div>
+            <div className="feature-item">
+              <span className="feature-icon">📈</span>
+              <div>
+                <strong>MF Holdings</strong>
+                <p>Current holdings with folio details, PAN, ISIN</p>
+              </div>
+            </div>
+          </div>
+         
+        </div>
       </main>
       
       <footer className="App-footer">
-        <p>Extract comprehensive mutual fund data from your CAS PDFs</p>
-        <p className="version">Version 1.0.0 | Powered by ITR2 Extraction Engine</p>
+        <p>© 2025 ITR Complete • Professional CAS Data Extraction • Secure & Accurate</p>
       </footer>
     </div>
   );
