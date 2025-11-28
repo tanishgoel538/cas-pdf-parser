@@ -1,0 +1,123 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.App.dark-mode .App-header {
+  background: rgba(30, 30, 50, 0.95);
+  color: #ffffff;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title-section h1 {
+  font-size: 2rem;
+  color: #4472C4;
+  margin-bottom: 0.25rem;
+}
+
+.App.dark-mode .title-section h1 {
+  color: #7B9FFF;
+}
+
+.title-section p {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 300;
+}
+
+.App.dark-mode .title-section p {
+  color: #aaa;
+}
+
+.theme-toggle {
+  background: none;
+  border: 2px solid #4472C4;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  background: #4472C4;
+}
+
+.App.dark-mode .theme-toggle {
+  border-color: #7B9FFF;
+}
+
+.App.dark-mode .theme-toggle:hover {
+  background: #7B9FFF;
+}
+
+.App-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.App-footer {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.App.dark-mode .App-footer {
+  background: rgba(30, 30, 50, 0.9);
+  color: #aaa;
+}
+
+.App-footer p {
+  margin: 0.25rem 0;
+}
+
+.App-footer .version {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .App-header {
+    padding: 1rem;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .title-section h1 {
+    font-size: 1.5rem;
+  }
+  
+  .App-main {
+    padding: 1rem;
+  }
+}
