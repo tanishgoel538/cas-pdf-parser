@@ -18,7 +18,8 @@ import {
 import {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
-  STATUS_MESSAGES
+  STATUS_MESSAGES,
+  STATUS_STATES
 } from '../constants/messages';
 
 const PDFUploader = ({ darkMode }) => {
@@ -48,10 +49,12 @@ const PDFUploader = ({ darkMode }) => {
     loading,
     progress,
     status,
+    statusState,
     funMessage,
     funFact,
     setProgress,
     setStatus,
+    setStatusState,
     startProgress,
     stopProgress,
     resetProgress
@@ -93,6 +96,7 @@ const PDFUploader = ({ darkMode }) => {
 
     setError('');
     setStatus(STATUS_MESSAGES.UPLOADING);
+    setStatusState(STATUS_STATES.IN_PROGRESS);
     setProgress(PROGRESS_STEPS.START);
     startProgress();
 
@@ -144,6 +148,7 @@ const PDFUploader = ({ darkMode }) => {
         outputFormat === OUTPUT_FORMATS.JSON ? SUCCESS_MESSAGES.JSON_DOWNLOADED :
           SUCCESS_MESSAGES.TEXT_DOWNLOADED;
       setStatus(completeText);
+      setStatusState(STATUS_STATES.COMPLETED);
       setProgress(PROGRESS_STEPS.COMPLETE);
 
       setSummary({
@@ -179,6 +184,7 @@ const PDFUploader = ({ darkMode }) => {
       }
 
       setError(errorMessage);
+      setStatusState(STATUS_STATES.FAILED);
       setSummary(null);
       resetProgress();
     } finally {
@@ -236,6 +242,7 @@ const PDFUploader = ({ darkMode }) => {
           <LoadingProgress
             progress={progress}
             status={status}
+            statusState={statusState}
             funMessage={funMessage}
             funFact={funFact}
           />

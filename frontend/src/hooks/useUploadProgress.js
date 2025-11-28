@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { FUN_MESSAGES, FUN_FACTS } from '../constants/messages';
+import { FUN_MESSAGES, FUN_FACTS, STATUS_STATES } from '../constants/messages';
 import { MESSAGE_ROTATION_INTERVAL } from '../constants/config';
 
 export const useUploadProgress = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
+  const [statusState, setStatusState] = useState(STATUS_STATES.IN_PROGRESS);
   const [funMessage, setFunMessage] = useState('');
   const [funFact, setFunFact] = useState('');
   const messageIntervalRef = useRef(null);
@@ -54,10 +55,12 @@ export const useUploadProgress = () => {
     loading,
     progress,
     status,
+    statusState,
     funMessage,
     funFact,
     setProgress,
     setStatus,
+    setStatusState,
     startProgress,
     stopProgress,
     resetProgress

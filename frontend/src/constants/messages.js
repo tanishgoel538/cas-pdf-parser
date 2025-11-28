@@ -50,6 +50,12 @@ export const SUCCESS_MESSAGES = {
   TEXT_DOWNLOADED: 'Complete! Text file downloaded.'
 };
 
+export const STATUS_STATES = {
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+  FAILED: 'Failed'
+};
+
 export const STATUS_MESSAGES = {
   UPLOADING: 'Uploading PDF...',
   EXTRACTING: 'Extracting text from PDF...',
