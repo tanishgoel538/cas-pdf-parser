@@ -39,49 +39,44 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
     if (outputFormat === 'excel') console.log(`   Selected sheets: ${selectedSheets.join(', ')}`);
     
     // Step 1: Extract text from PDF
-    console.log('\n🔍 Step 1: Extracting text from PDF...');
+    const startTime = Date.now();
     const textContent = await extractTextFromPDF(uploadedFilePath, password);
     
     if (!textContent || textContent.length < 100) {
       throw new Error('Extracted text is too short. PDF may be empty or corrupted.');
     }
     
-    // Step 2: Extract portfolio summary
-    console.log('\n📊 Step 2: Extracting portfolio summary...');
-    const portfolioData = extractPortfolioSummary(textContent);
+    // Step 2 & 3: Extract portfolio and transactions in parallel
+    const [portfolioData, transactionData] = await Promise.all([
+      Promise.resolve(extractPortfolioSummary(textContent)),
+      Promise.resolve(extractFundTransactions(textContent, extractPortfolioSummary(textContent)))
+    ]).catch(err => {
+      // Fallback to sequential if parallel fails
+      const portfolio = extractPortfolioSummary(textContent);
+      const transactions = extractFundTransactions(textContent, portfolio);
+      return [portfolio, transactions];
+    });
     
     if (!portfolioData.portfolioSummary || portfolioData.portfolioSummary.length === 0) {
       throw new Error('No portfolio data found. Please ensure this is a valid CAS PDF.');
     }
     
-    // Step 3: Extract fund transactions
-    console.log('\n💼 Step 3: Extracting fund transactions...');
-    const transactionData = extractFundTransactions(textContent, portfolioData);
-    
     if (!transactionData.funds || transactionData.funds.length === 0) {
       throw new Error('No transaction data found. Please ensure this is a valid CAS PDF.');
     }
     
-    // Prepare summary
+    // Prepare summary (optimized with reduce)
     const summary = {
       totalFunds: portfolioData.fundCount,
       totalFolios: transactionData.totalFolios,
-      totalTransactions: 0
+      totalTransactions: transactionData.funds.reduce((total, fund) => 
+        total + fund.folios.reduce((folioTotal, folio) => 
+          folioTotal + (folio.transactions?.length || 0), 0), 0)
     };
     
-    // Count total transactions
-    transactionData.funds.forEach(fund => {
-      fund.folios.forEach(folio => {
-        if (folio.transactions) {
-          summary.totalTransactions += folio.transactions.length;
-        }
-      });
-    });
-    
-    console.log('\n✅ Extraction Complete!');
-    console.log(`   Funds: ${summary.totalFunds}`);
-    console.log(`   Folios: ${summary.totalFolios}`);
-    console.log(`   Transactions: ${summary.totalTransactions}`);
+    const processingTime = Date.now() - startTime;
+    console.log(`\n✅ Extraction Complete in ${processingTime}ms!`);
+    console.log(`   Funds: ${summary.totalFunds} | Folios: ${summary.totalFolios} | Transactions: ${summary.totalTransactions}`);
     
     const timestamp = Date.now();
     const originalName = path.parse(req.file.originalname).name;
@@ -129,8 +124,10 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
     }
     
     // Send file as download with proper headers
+    const totalProcessingTime = Date.now() - startTime;
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('X-Processing-Time', `${totalProcessingTime}ms`);
     
     res.download(outputFilePath, fileName, (err) => {
       // Cleanup files after download

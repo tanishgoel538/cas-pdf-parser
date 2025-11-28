@@ -1,16 +1,29 @@
 // backend/server.js
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-require('dotenv').config();
+
+// Load environment variables with priority: .env.local > .env.production > .env
+const dotenv = require('dotenv');
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+dotenv.config({ path: path.join(__dirname, envFile) });
+dotenv.config({ path: path.join(__dirname, '.env.local') }); // Override with local if exists
 
 const casRoutes = require('./src/routes/casRoutes');
 const batchCasRoutes = require('./src/routes/batchCasRoutes');
 const validateRoutes = require('./src/routes/validateRoutes');
+const encryptionRoutes = require('./src/routes/encryptionRoutes');
+const { encryptResponse, decryptRequest } = require('./src/middleware/encryptionMiddleware');
+const { requestTiming, memoryMonitor, simpleRateLimit } = require('./src/middleware/performanceMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Performance optimizations
+app.set('x-powered-by', false); // Remove X-Powered-By header
+app.set('etag', false); // Disable ETags for dynamic content
 
 // === CORS setup ===
 // Accept a comma-separated list in CORS_ORIGIN, e.g.
@@ -36,9 +49,31 @@ const corsOptions = {
   allowedHeaders: ['Content-Type','Authorization']
 };
 
+// Enable gzip compression for faster responses
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  },
+  level: 6 // Balance between speed and compression ratio
+}));
+
+// Performance monitoring
+app.use(requestTiming);
+if (process.env.NODE_ENV === 'development') {
+  app.use(memoryMonitor);
+}
+
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' })); // Increase limit for large payloads
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Rate limiting (100 requests per minute)
+app.use('/api', simpleRateLimit(100, 60000));
+
+// Encryption middleware (optional - activated by query param or header)
+app.use(decryptRequest);
+app.use(encryptResponse);
 
 // === Ensure directories exist (safe on ephemeral FS; used only for temp storage) ===
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -55,6 +90,7 @@ try {
 app.use('/api', casRoutes);
 app.use('/api', batchCasRoutes);
 app.use('/api', validateRoutes);
+app.use('/api', encryptionRoutes);
 
 // Simple healthcheck
 app.get('/health', (req, res) => res.json({ status: 'OK', message: 'ITR Complete Backend is running' }));

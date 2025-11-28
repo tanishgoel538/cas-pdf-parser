@@ -15,6 +15,7 @@ const { generateExcelReport } = require('../extractors/excelGenerator');
  * Returns a ZIP file containing all processed files
  */
 router.post('/extract-cas-batch', upload.array('pdfs', 50), async (req, res) => {
+  const startTime = Date.now();
   const uploadedFiles = [];
   const outputFiles = [];
   let zipFilePath = null;
@@ -158,8 +159,10 @@ router.post('/extract-cas-batch', upload.array('pdfs', 50), async (req, res) => 
       console.log(`📦 ZIP file created: ${zipFileName} (${archive.pointer()} bytes)`);
       
       // Send ZIP file
+      const processingTime = Date.now() - startTime;
       res.setHeader('Content-Type', 'application/zip');
       res.setHeader('Content-Disposition', `attachment; filename="${zipFileName}"`);
+      res.setHeader('X-Processing-Time', `${processingTime}ms`);
       
       res.download(zipFilePath, zipFileName, (err) => {
         // Cleanup all files

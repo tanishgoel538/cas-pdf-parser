@@ -1,4 +1,5 @@
 import React from 'react';
+import './FeaturesList.css';
 
 const FeaturesList = ({ darkMode }) => {
   const features = [
