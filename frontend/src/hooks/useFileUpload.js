@@ -79,6 +79,7 @@ export const useFileUpload = () => {
     fileInputRef,
     setPassword,
     setShowPassword,
+    setIsDragOver,
     setOutputFormat,
     handleFileSelection,
     handleDragOver,

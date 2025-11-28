@@ -6,6 +6,8 @@ const fs = require('fs');
 require('dotenv').config();
 
 const casRoutes = require('./src/routes/casRoutes');
+const batchCasRoutes = require('./src/routes/batchCasRoutes');
+const validateRoutes = require('./src/routes/validateRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,6 +53,8 @@ try {
 
 // === Routes ===
 app.use('/api', casRoutes);
+app.use('/api', batchCasRoutes);
+app.use('/api', validateRoutes);
 
 // Simple healthcheck
 app.get('/health', (req, res) => res.json({ status: 'OK', message: 'ITR Complete Backend is running' }));

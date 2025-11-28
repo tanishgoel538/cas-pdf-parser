@@ -1,0 +1,59 @@
+.upload-history {
+  width: 100%;
+}
+
+/* Custom scrollbar for history list */
+.upload-history .MuiBox-root::-webkit-scrollbar {
+  width: 8px;
+}
+
+.upload-history .MuiBox-root::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.upload-history .MuiBox-root::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 4px;
+}
+
+.upload-history .MuiBox-root::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+.upload-history.dark-mode .MuiBox-root::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.upload-history.dark-mode .MuiBox-root::-webkit-scrollbar-thumb {
+  background: rgba(168, 185, 255, 0.3);
+}
+
+.upload-history.dark-mode .MuiBox-root::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 185, 255, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .upload-history .MuiAccordionSummary-content {
+    flex-wrap: wrap;
+  }
+
+  .upload-history .MuiTypography-root {
+    font-size: 0.9rem;
+  }
+
+  .upload-history .MuiBox-root {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-history .MuiTypography-root {
+    font-size: 0.85rem;
+  }
+
+  .upload-history .MuiBox-root {
+    max-height: 250px;
+  }
+}

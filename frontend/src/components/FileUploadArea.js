@@ -4,6 +4,7 @@ const FileUploadArea = ({
   file,
   isDragOver,
   loading,
+  multiple = false,
   onDragOver,
   onDragLeave,
   onDrop,
@@ -36,6 +37,7 @@ const FileUploadArea = ({
             ref={fileInputRef}
             type="file"
             accept=".pdf"
+            multiple={multiple}
             onChange={onFileChange}
             style={{ display: 'none' }}
           />

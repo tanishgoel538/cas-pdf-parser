@@ -1,0 +1,55 @@
+.multiple-file-upload {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* Custom scrollbar for table */
+.multiple-file-upload .MuiTableContainer-root::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.multiple-file-upload .MuiTableContainer-root::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.multiple-file-upload .MuiTableContainer-root::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 4px;
+}
+
+.multiple-file-upload .MuiTableContainer-root::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+.multiple-file-upload.dark-mode .MuiTableContainer-root::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.multiple-file-upload.dark-mode .MuiTableContainer-root::-webkit-scrollbar-thumb {
+  background: rgba(168, 185, 255, 0.3);
+}
+
+.multiple-file-upload.dark-mode .MuiTableContainer-root::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 185, 255, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .multiple-file-upload .MuiTableCell-root {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .multiple-file-upload .MuiTextField-root {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .multiple-file-upload .MuiTableCell-root {
+    padding: 0.4rem;
+    font-size: 0.75rem;
+  }
+}

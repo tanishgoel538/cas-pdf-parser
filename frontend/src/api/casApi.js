@@ -47,3 +47,18 @@ export const getOutputFilename = (originalFilename, format, fileExtensions) => {
   const baseFilename = originalFilename.replace(/\.pdf$/i, '');
   return `${baseFilename}${fileExtensions[format]}`;
 };
+
+export const extractCASDataBatch = async (formData, onUploadProgress) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/extract-cas-batch`, formData, {
+      responseType: 'blob',
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      onUploadProgress
+    });
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};

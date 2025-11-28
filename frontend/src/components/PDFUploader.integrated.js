@@ -11,7 +11,6 @@ import { useFileUpload } from '../hooks/useFileUpload';
 import { useUploadProgress } from '../hooks/useUploadProgress';
 import { useUploadHistory } from '../hooks/useUploadHistory';
 import { extractCASData, extractCASDataBatch, downloadFile, extractFilenameFromHeaders, getOutputFilename } from '../api/casApi';
-import { validatePdfFile } from '../api/validatePdf';
 import UploadHistory from './UploadHistory';
 import {
   OUTPUT_FORMATS,
@@ -33,8 +32,6 @@ const PDFUploader = ({ darkMode }) => {
   const [uploadMode, setUploadMode] = useState('single'); // 'single' or 'multiple'
   const [multipleFiles, setMultipleFiles] = useState([]);
   const [filePasswords, setFilePasswords] = useState({});
-  const [validationStatus, setValidationStatus] = useState({});
-  const [isValidating, setIsValidating] = useState(false);
 
   const { history, addHistoryItem, clearHistory, removeHistoryItem } = useUploadHistory();
 
@@ -48,7 +45,6 @@ const PDFUploader = ({ darkMode }) => {
     fileInputRef,
     setPassword,
     setShowPassword,
-    setIsDragOver,
     setOutputFormat,
     handleFileSelection,
     handleDragOver,
@@ -141,50 +137,13 @@ const PDFUploader = ({ darkMode }) => {
       ...prev,
       [filename]: password
     }));
-
-    // If file had an error and now has a password, mark as pending validation
-    const currentStatus = validationStatus[filename];
-    if (currentStatus && !currentStatus.isValid && password) {
-      setValidationStatus(prev => ({
-        ...prev,
-        [filename]: {
-          ...currentStatus,
-          isPending: true,
-          error: 'Click Extract to validate'
-        }
-      }));
-    }
   };
-
-  // Validate all files
-  const validateAllFiles = async () => {
-    setIsValidating(true);
-    const newValidationStatus = {};
-
-    for (const file of multipleFiles) {
-      const password = filePasswords[file.name] || '';
-      const result = await validatePdfFile(file, password);
-      newValidationStatus[file.name] = result;
-    }
-
-    setValidationStatus(newValidationStatus);
-    setIsValidating(false);
-    return newValidationStatus;
-  };
-
-
 
   const handleClearMultipleFiles = () => {
     setMultipleFiles([]);
     setFilePasswords({});
-    setValidationStatus({});
     setError('');
     setSummary(null);
-    
-    // Clear the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   // Single file handlers
@@ -347,43 +306,6 @@ const PDFUploader = ({ darkMode }) => {
       return;
     }
 
-    // Validate all files first
-    setError('');
-    setIsValidating(true);
-
-    const validationResults = await validateAllFiles();
-    setIsValidating(false);
-
-    // Check if any files need passwords
-    const filesNeedingPasswords = multipleFiles.filter(file => {
-      const status = validationResults[file.name];
-      return status && !status.isValid && status.needsPassword;
-    });
-
-    if (filesNeedingPasswords.length > 0) {
-      const fileNames = filesNeedingPasswords.map(f => f.name).join(', ');
-      setError(`Please provide passwords for highlighted files: ${fileNames}`);
-      return;
-    }
-
-    // Check if any files are invalid
-    const invalidFiles = multipleFiles.filter(file => {
-      const status = validationResults[file.name];
-      return status && !status.isValid;
-    });
-
-    if (invalidFiles.length > 0) {
-      const fileNames = invalidFiles.map(f => f.name).join(', ');
-      setError(`⚠️ Some files are invalid: ${fileNames}. Please check the highlighted files.`);
-      return;
-    }
-
-    // All files are valid, proceed with upload
-    setStatus('Uploading files...');
-    setStatusState(STATUS_STATES.IN_PROGRESS);
-    setProgress(PROGRESS_STEPS.START);
-    startProgress();
-
     setError('');
     setStatus('Uploading files...');
     setStatusState(STATUS_STATES.IN_PROGRESS);
@@ -452,27 +374,21 @@ const PDFUploader = ({ darkMode }) => {
 
       setTimeout(() => {
         handleClearMultipleFiles();
-        stopProgress();
       }, AUTO_CLEAR_DELAY);
 
     } catch (err) {
       console.error('Batch upload error:', err);
 
-      let errorMessage = 'Failed to process batch. Please check if any files require passwords.';
+      let errorMessage = 'Failed to process batch. Please try again.';
 
       if (err.response) {
         if (err.response.status === 400) {
-          errorMessage = 'Invalid files or missing data. Please check file formats and passwords.';
+          errorMessage = 'Invalid files or missing data.';
         } else if (err.response.status === 500) {
           try {
             const text = await err.response.data.text();
             const errorData = JSON.parse(text);
             errorMessage = errorData.message || errorMessage;
-            
-            // Check if it's a password error
-            if (errorMessage.includes('password')) {
-              errorMessage = 'One or more files require a password. Please enter passwords for protected files and try again.';
-            }
           } catch (e) {
             // Use default message
           }
@@ -495,7 +411,6 @@ const PDFUploader = ({ darkMode }) => {
         fileCount: multipleFiles.length
       });
     } finally {
-      setIsValidating(false);
       stopProgress();
     }
   };
@@ -606,8 +521,6 @@ const PDFUploader = ({ darkMode }) => {
             {multipleFiles.length > 0 && (
               <MultipleFileUpload
                 files={multipleFiles}
-                passwords={filePasswords}
-                validationStatus={validationStatus}
                 onRemoveFile={handleRemoveMultipleFile}
                 onPasswordChange={handlePasswordChangeForFile}
                 darkMode={darkMode}
@@ -629,11 +542,8 @@ const PDFUploader = ({ darkMode }) => {
           <button
             className="upload-button"
             onClick={uploadMode === 'single' ? handleUpload : handleBatchUpload}
-            disabled={isValidating}
           >
-            {isValidating ? (
-              <>🔍 Validating Files...</>
-            ) : uploadMode === 'single' ? (
+            {uploadMode === 'single' ? (
               <>🚀 Extract & Generate {outputFormat === OUTPUT_FORMATS.EXCEL ? 'Excel' : outputFormat === OUTPUT_FORMATS.JSON ? 'JSON' : 'Text'}</>
             ) : (
               <>🚀 Extract All & Download ZIP ({multipleFiles.length} files)</>
