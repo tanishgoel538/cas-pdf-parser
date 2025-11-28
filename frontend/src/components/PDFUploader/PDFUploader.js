@@ -1,31 +1,31 @@
 import React, { useState } from 'react';
 import { Box, Button, ButtonGroup } from '@mui/material';
 import './PDFUploader.css';
-import FileUploadArea from './FileUploadArea';
-import PasswordInput from './PasswordInput';
-import OutputOptions from './OutputOptions';
-import LoadingProgress from './LoadingProgress';
-import MultipleFileUpload from './MultipleFileUpload';
-import { ErrorMessage, SuccessMessage } from './StatusMessages';
-import { useFileUpload } from '../hooks/useFileUpload';
-import { useUploadProgress } from '../hooks/useUploadProgress';
-import { useUploadHistory } from '../hooks/useUploadHistory';
-import { extractCASData, extractCASDataBatch, downloadFile, extractFilenameFromHeaders, getOutputFilename } from '../api/casApi';
-import { validatePdfFile } from '../api/validatePdf';
-import UploadHistory from './UploadHistory';
+import FileUploadArea from '../FileUploadArea';
+import PasswordInput from '../PasswordInput';
+import OutputOptions from '../OutputOptions';
+import LoadingProgress from '../LoadingProgress';
+import MultipleFileUpload from '../MultipleFileUpload';
+import { ErrorMessage, SuccessMessage } from '../StatusMessages';
+import { useFileUpload } from '../../hooks/useFileUpload';
+import { useUploadProgress } from '../../hooks/useUploadProgress';
+import { useUploadHistory } from '../../hooks/useUploadHistory';
+import { extractCASData, extractCASDataBatch, downloadFile, extractFilenameFromHeaders, getOutputFilename } from '../../api/casApi';
+import { validatePdfFile } from '../../api/validatePdf';
+import UploadHistory from '../UploadHistory';
 import {
   OUTPUT_FORMATS,
   MIME_TYPES,
   FILE_EXTENSIONS,
   PROGRESS_STEPS,
   AUTO_CLEAR_DELAY
-} from '../constants/config';
+} from '../../constants/config';
 import {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
   STATUS_MESSAGES,
   STATUS_STATES
-} from '../constants/messages';
+} from '../../constants/messages';
 
 const PDFUploader = ({ darkMode }) => {
   const [error, setError] = useState('');
@@ -589,19 +589,46 @@ const PDFUploader = ({ darkMode }) => {
           </>
         ) : (
           <>
-            <FileUploadArea
-              file={null}
-              isDragOver={isDragOver}
-              loading={loading}
-              multiple={true}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleMultipleFileDrop}
-              onBrowseClick={() => fileInputRef.current.click()}
-              onClearFile={handleClearMultipleFiles}
-              fileInputRef={fileInputRef}
-              onFileChange={handleMultipleFileInputChange}
-            />
+            {multipleFiles.length === 0 ? (
+              <FileUploadArea
+                file={null}
+                isDragOver={isDragOver}
+                loading={loading}
+                multiple={true}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleMultipleFileDrop}
+                onBrowseClick={() => fileInputRef.current.click()}
+                onClearFile={handleClearMultipleFiles}
+                fileInputRef={fileInputRef}
+                onFileChange={handleMultipleFileInputChange}
+              />
+            ) : (
+              <div className="files-selected-summary">
+                <div className="summary-content">
+                  <span className="file-count-badge">{multipleFiles.length}</span>
+                  <div className="summary-text">
+                    <h4>{multipleFiles.length} file{multipleFiles.length > 1 ? 's' : ''} selected</h4>
+                    <p>{(multipleFiles.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2)} MB total</p>
+                  </div>
+                </div>
+                <button
+                  className="reupload-button"
+                  onClick={() => fileInputRef.current.click()}
+                  disabled={loading}
+                >
+                  📁 Add More Files
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  multiple={true}
+                  onChange={handleMultipleFileInputChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            )}
 
             {multipleFiles.length > 0 && (
               <MultipleFileUpload

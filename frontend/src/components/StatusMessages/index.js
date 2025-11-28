@@ -1,1 +1,1 @@
-export { default } from './StatusMessages';
+export { ErrorMessage, SuccessMessage } from './StatusMessages';

@@ -1,6 +1,6 @@
 .features-panel {
   flex: 0 0 350px;
-  background: var(--bg-card);
+  background: whitesmoke;
   backdrop-filter: blur(10px);
   border-radius: 15px;
   padding: 1.5rem;
@@ -15,7 +15,7 @@
   font-size: 1.5rem;
   background: var(--primary-gradient);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  -webkit-text-fill-color: black;
   background-clip: text;
 }
 

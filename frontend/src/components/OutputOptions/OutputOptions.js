@@ -1,5 +1,5 @@
 import React from 'react';
-import { OUTPUT_FORMATS, SHEET_TYPES } from '../constants/config';
+import { OUTPUT_FORMATS, SHEET_TYPES } from '../../constants/config';
 
 const OutputOptions = ({ outputFormat, selectedSheets, onFormatChange, onSheetToggle }) => {
   return (

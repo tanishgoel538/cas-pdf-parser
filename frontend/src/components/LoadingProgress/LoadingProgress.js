@@ -1,6 +1,6 @@
 import React from 'react';
-import ProgressBar from './ProgressBar';
-import { STATUS_STATES } from '../constants/messages';
+import ProgressBar from '../ProgressBar';
+import { STATUS_STATES } from '../../constants/messages';
 
 const LoadingProgress = ({ progress, status, statusState, funMessage, funFact }) => {
   const getStatusClass = () => {

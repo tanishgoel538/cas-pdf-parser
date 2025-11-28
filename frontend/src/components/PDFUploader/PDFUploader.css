@@ -950,3 +950,159 @@
     padding: 0.4rem 0.6rem;
   }
 }
+
+
+/* Files Selected Summary */
+.files-selected-summary {
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: rgba(102, 126, 234, 0.05);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.pdf-uploader.dark-mode .files-selected-summary {
+  border-color: #a8b9ff;
+  background: rgba(168, 185, 255, 0.1);
+}
+
+.summary-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.file-count-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  flex-shrink: 0;
+}
+
+.pdf-uploader.dark-mode .file-count-badge {
+  background: linear-gradient(135deg, #a8b9ff 0%, #c084fc 100%);
+}
+
+.summary-text {
+  flex: 1;
+}
+
+.summary-text h4 {
+  margin: 0 0 0.25rem 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.pdf-uploader.dark-mode .summary-text h4 {
+  color: #ffffff;
+}
+
+.summary-text p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.pdf-uploader.dark-mode .summary-text p {
+  color: #b8b8d1;
+}
+
+.reupload-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.reupload-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.reupload-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pdf-uploader.dark-mode .reupload-button {
+  background: linear-gradient(135deg, #a8b9ff 0%, #c084fc 100%);
+}
+
+@media (max-width: 768px) {
+  .files-selected-summary {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+  }
+
+  .summary-content {
+    justify-content: center;
+  }
+
+  .file-count-badge {
+    width: 50px;
+    height: 50px;
+    font-size: 1.3rem;
+  }
+
+  .summary-text h4 {
+    font-size: 1rem;
+  }
+
+  .summary-text p {
+    font-size: 0.85rem;
+  }
+
+  .reupload-button {
+    width: 100%;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .files-selected-summary {
+    padding: 0.75rem;
+  }
+
+  .file-count-badge {
+    width: 45px;
+    height: 45px;
+    font-size: 1.2rem;
+  }
+
+  .summary-text h4 {
+    font-size: 0.9rem;
+  }
+
+  .summary-text p {
+    font-size: 0.8rem;
+  }
+
+  .reupload-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+}
