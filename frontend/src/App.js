@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import PDFUploader from './components/PDFUploader';
+import FeaturesList from './components/FeaturesList';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -33,34 +34,11 @@ function App() {
       
       <main className="App-main">
         <div className="main-container">
-           <div className="uploader-panel">
+          
+          <div className="uploader-panel">
             <PDFUploader darkMode={darkMode} />
           </div>
-          <div className="features-panel">
-            <h2>What You'll Get</h2>
-            <div className="feature-item">
-              <span className="feature-icon">📊</span>
-              <div>
-                <strong>Portfolio Summary</strong>
-                <p>Overview by fund house with cost and market values</p>
-              </div>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">💰</span>
-              <div>
-                <strong>Detailed Transactions</strong>
-                <p>Complete history with NAV, units, and balances</p>
-              </div>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">📈</span>
-              <div>
-                <strong>MF Holdings</strong>
-                <p>Current holdings with folio details, PAN, ISIN</p>
-              </div>
-            </div>
-          </div>
-         
+          <FeaturesList darkMode={darkMode} />
         </div>
       </main>
       
