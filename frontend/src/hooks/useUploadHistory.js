@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 
-const STORAGE_KEY = 'cas_upload_history';
+// Use sessionStorage for temporary, per-session history
+// This ensures each user sees only their own history and it's cleared when they close the browser/tab
+const STORAGE_KEY = 'cas_upload_history_session';
 const MAX_HISTORY_ITEMS = 50;
 
 export const useUploadHistory = () => {
   const [history, setHistory] = useState([]);
 
-  // Load history from localStorage on mount
+  // Load history from sessionStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = sessionStorage.getItem(STORAGE_KEY);
       if (stored) {
         setHistory(JSON.parse(stored));
       }
@@ -18,10 +20,10 @@ export const useUploadHistory = () => {
     }
   }, []);
 
-  // Save history to localStorage whenever it changes
+  // Save history to sessionStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     } catch (error) {
       console.error('Failed to save upload history:', error);
     }
@@ -45,7 +47,7 @@ export const useUploadHistory = () => {
 
   const clearHistory = () => {
     setHistory([]);
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
   };
 
   const removeHistoryItem = (id) => {
