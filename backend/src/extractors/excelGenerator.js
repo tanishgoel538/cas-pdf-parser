@@ -67,6 +67,26 @@ function generatePortfolioSummarySheet(workbook, portfolioData) {
         marketValue: fund.marketValue
       });
     });
+    
+    // Add total row if available
+    if (portfolioData.total) {
+      console.log('Adding total row:', portfolioData.total);
+      const totalRow = worksheet.addRow({
+        fundName: 'Total',
+        costValue: portfolioData.total.costValue,
+        marketValue: portfolioData.total.marketValue
+      });
+      
+      // Format total row with bold font and background color
+      totalRow.font = { bold: true };
+      totalRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE7E6E6' }
+      };
+    } else {
+      console.log('No total data found in portfolioData:', portfolioData);
+    }
   }
   
   // Format header row

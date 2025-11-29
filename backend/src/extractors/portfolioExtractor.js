@@ -2,7 +2,8 @@
 const PORTFOLIO_SUMMARY_REGEX = /PORTFOLIO SUMMARY/;
 const TRANSACTION_HEADER_REGEX = /Date.*Transaction/;
 const TOTAL_ROW_REGEX = /^Total\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/;
-const FUND_LINE_REGEX = /^(.*?Mutual Fund)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/;
+// Match: "Mutual Fund", "Mutual Funds", "MUTUAL FUNDS", "MF", "M.F.", "Mf" (case-insensitive variations)
+const FUND_LINE_REGEX = /^(.*?(?:Mutual Funds?|M\.?F\.?))\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/i;
 
 /**
  * Extracts portfolio summary data from CAS text content (Optimized)
@@ -53,6 +54,14 @@ function extractPortfolioSummary(textContent) {
         marketValue: parseFloat(fundNameMatch[3].replace(/,/g, ''))
       });
     }
+  }
+  
+  // Calculate total if not found in PDF
+  if (!total && portfolioSummary.length > 0) {
+    total = {
+      costValue: portfolioSummary.reduce((sum, fund) => sum + fund.costValue, 0),
+      marketValue: portfolioSummary.reduce((sum, fund) => sum + fund.marketValue, 0)
+    };
   }
   
   return {
