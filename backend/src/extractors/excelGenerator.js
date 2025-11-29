@@ -15,9 +15,24 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
     
     const workbook = new ExcelJS.Workbook();
     
+    // Calculate MF Holdings total first if needed
+    let holdingsTotalMarketValue = null;
+    if (sheets.includes('holdings') && transactionData.funds) {
+      holdingsTotalMarketValue = 0;
+      transactionData.funds.forEach(fund => {
+        if (fund.folios) {
+          fund.folios.forEach(folio => {
+            if (folio.marketValue !== null && folio.marketValue !== undefined) {
+              holdingsTotalMarketValue += folio.marketValue;
+            }
+          });
+        }
+      });
+    }
+    
     // Sheet 1: Portfolio Summary
     if (sheets.includes('portfolio')) {
-      generatePortfolioSummarySheet(workbook, portfolioData);
+      generatePortfolioSummarySheet(workbook, portfolioData, holdingsTotalMarketValue);
       console.log('✓ Portfolio Summary sheet created');
     }
     
@@ -48,7 +63,7 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
 /**
  * Generates Portfolio Summary sheet
  */
-function generatePortfolioSummarySheet(workbook, portfolioData) {
+function generatePortfolioSummarySheet(workbook, portfolioData, holdingsTotalMarketValue) {
   const worksheet = workbook.addWorksheet('Portfolio Summary');
   
   // Add columns
@@ -57,6 +72,8 @@ function generatePortfolioSummarySheet(workbook, portfolioData) {
     { header: 'Cost Value (INR)', key: 'costValue', width: 20 },
     { header: 'Market Value (INR)', key: 'marketValue', width: 20 }
   ];
+  
+  let totalRowNumber = null;
   
   // Add data rows
   if (portfolioData && portfolioData.portfolioSummary) {
@@ -71,11 +88,15 @@ function generatePortfolioSummarySheet(workbook, portfolioData) {
     // Add total row if available
     if (portfolioData.total) {
       console.log('Adding total row:', portfolioData.total);
+      console.log('Holdings total market value:', holdingsTotalMarketValue);
+      
       const totalRow = worksheet.addRow({
         fundName: 'Total',
         costValue: portfolioData.total.costValue,
         marketValue: portfolioData.total.marketValue
       });
+      
+      totalRowNumber = totalRow.number;
       
       // Format total row with bold font and background color
       totalRow.font = { bold: true };
@@ -84,6 +105,31 @@ function generatePortfolioSummarySheet(workbook, portfolioData) {
         pattern: 'solid',
         fgColor: { argb: 'FFE7E6E6' }
       };
+      
+      // Color the market value cell based on comparison with holdings total
+      if (holdingsTotalMarketValue !== null) {
+        const marketValueCell = totalRow.getCell(3);
+        const tolerance = 0.01; // Allow 1 paisa difference due to rounding
+        const difference = Math.abs(portfolioData.total.marketValue - holdingsTotalMarketValue);
+        
+        if (difference <= tolerance) {
+          // Green if values match
+          marketValueCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF90EE90' } // Light green
+          };
+          marketValueCell.font = { bold: true, color: { argb: 'FF006400' } }; // Dark green text
+        } else {
+          // Red if values don't match
+          marketValueCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFF6B6B' } // Light red
+          };
+          marketValueCell.font = { bold: true, color: { argb: 'FF8B0000' } }; // Dark red text
+        }
+      }
     } else {
       console.log('No total data found in portfolioData:', portfolioData);
     }
@@ -256,7 +302,11 @@ function generateMFHoldingsSheet(workbook, transactionData) {
     { header: 'PAN', key: 'pan', width: 15 }
   ];
   
-  // Add data rows
+  // Add data rows and calculate totals
+  let totalClosingUnits = 0;
+  let totalCostValue = 0;
+  let totalMarketValue = 0;
+  
   if (transactionData.funds) {
     transactionData.funds.forEach(fund => {
       if (fund.folios) {
@@ -273,9 +323,42 @@ function generateMFHoldingsSheet(workbook, transactionData) {
             advisor: folio.advisor || null,
             pan: folio.pan || ''
           });
+          
+          // Accumulate totals
+          if (folio.closingUnitBalance !== null && folio.closingUnitBalance !== undefined) {
+            totalClosingUnits += folio.closingUnitBalance;
+          }
+          if (folio.totalCostValue !== null && folio.totalCostValue !== undefined) {
+            totalCostValue += folio.totalCostValue;
+          }
+          if (folio.marketValue !== null && folio.marketValue !== undefined) {
+            totalMarketValue += folio.marketValue;
+          }
         });
       }
     });
+    
+    // Add total row
+    const totalRow = worksheet.addRow({
+      folioNumber: '',
+      schemeName: 'Total',
+      isin: '',
+      openingUnitBalance: null,
+      closingUnitBalance: totalClosingUnits,
+      nav: null,
+      totalCostValue: totalCostValue,
+      marketValue: totalMarketValue,
+      advisor: null,
+      pan: ''
+    });
+    
+    // Format total row with bold font and background color
+    totalRow.font = { bold: true };
+    totalRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE7E6E6' }
+    };
   }
   
   // Format header row
