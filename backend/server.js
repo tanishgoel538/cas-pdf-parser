@@ -37,16 +37,22 @@ const corsOptions = {
 
     if (!rawOrigins.length) {
       // If no origins set, be permissive (use only for dev). You can change this to block by default.
+      console.log('⚠️  No CORS_ORIGIN set, allowing all origins (not recommended for production)');
       return callback(null, true);
     }
 
     if (rawOrigins.includes(origin)) {
+      console.log(`✅ CORS: Allowed origin: ${origin}`);
       return callback(null, true);
     }
-    return callback(new Error('CORS policy: This origin is not allowed'), false);
+    
+    console.error(`❌ CORS: Rejected origin: ${origin}`);
+    console.error(`   Allowed origins: ${rawOrigins.join(', ')}`);
+    return callback(new Error(`CORS policy: Origin ${origin} is not allowed. Allowed origins: ${rawOrigins.join(', ')}`), false);
   },
   methods: ['GET','POST','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization']
+  allowedHeaders: ['Content-Type','Authorization'],
+  credentials: true
 };
 
 // Enable gzip compression for faster responses
