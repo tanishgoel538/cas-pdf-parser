@@ -5,15 +5,33 @@ const ExcelJS = require('exceljs');
  * @param {Object} portfolioData - Portfolio summary data
  * @param {Object} transactionData - Fund transactions data
  * @param {string} outputPath - Path to save Excel file
- * @param {Array<string>} sheets - Array of sheet names to generate ['portfolio', 'transactions', 'holdings']
+ * @param {Array<string>} sheets - Array of sheet names to generate ['portfolio', 'transactions', 'holdings', 'returns']
+ * @param {Object} dateRangeInfo - Date range information (optional)
+ * @param {string} navHistoryData - NAV history data (optional)
+ * @param {Object} userInfo - User information (name, email, phone) (optional)
  * @returns {Promise<string>} - Path to generated Excel file
  */
-async function generateExcelReport(portfolioData, transactionData, outputPath, sheets = ['portfolio', 'transactions', 'holdings']) {
+async function generateExcelReport(portfolioData, transactionData, outputPath, sheets = ['portfolio', 'transactions', 'holdings'], dateRangeInfo = null, navHistoryData = null, userInfo = null) {
   try {
     console.log('Starting Excel report generation...');
     console.log('Selected sheets:', sheets);
     
     const workbook = new ExcelJS.Workbook();
+    
+    // Set workbook properties with user info
+    if (userInfo) {
+      workbook.creator = userInfo.name || 'CAS Extractor';
+      workbook.created = new Date();
+      workbook.modified = new Date();
+      workbook.properties = {
+        ...workbook.properties,
+        company: 'CAS Data Extractor',
+        manager: userInfo.name || '',
+        subject: `CAS Report for ${userInfo.name || 'User'}`,
+        keywords: `CAS, Mutual Funds, ${userInfo.email || ''}`,
+        description: `Consolidated Account Statement Report\nName: ${userInfo.name || 'N/A'}\nEmail: ${userInfo.email || 'N/A'}\nPhone: ${userInfo.phone || 'N/A'}`
+      };
+    }
     
     // Calculate MF Holdings total first if needed
     let holdingsTotalMarketValue = null;
@@ -28,6 +46,12 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
           });
         }
       });
+    }
+    
+    // Sheet 0: User Summary (always generate if userInfo available)
+    if (userInfo) {
+      generateUserSummarySheet(workbook, userInfo, portfolioData, dateRangeInfo);
+      console.log('✓ User Summary sheet created');
     }
     
     // Sheet 1: Portfolio Summary
@@ -46,6 +70,30 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
     if (sheets.includes('holdings')) {
       generateMFHoldingsSheet(workbook, transactionData);
       console.log('✓ MF Holdings sheet created');
+    }
+    
+    // Sheet 4: Return Calculation (if NAV data available)
+    if (sheets.includes('returns') && dateRangeInfo && navHistoryData) {
+      const { generateReturnCalculationSheet } = require('./returnCalculator');
+      const { fetchNifty50Data } = require('../utils/niftyFetcher');
+      
+      // Fetch NIFTY 50 data
+      let niftyData = null;
+      try {
+        console.log('📈 Fetching NIFTY 50 data for benchmark comparison...');
+        niftyData = await fetchNifty50Data(dateRangeInfo.openingDateRange, dateRangeInfo.closingDateRange);
+      } catch (niftyError) {
+        console.warn('⚠️  Could not fetch NIFTY 50 data:', niftyError.message);
+      }
+      
+      const calculationLogs = await generateReturnCalculationSheet(workbook, transactionData, dateRangeInfo, navHistoryData, niftyData);
+      console.log('✓ Return Calculation sheet created');
+      
+      // Generate Calculation Log sheet for validation
+      if (calculationLogs && calculationLogs.length > 0) {
+        generateCalculationLogSheet(workbook, calculationLogs);
+        console.log('✓ Calculation Log sheet created');
+      }
     }
     
     // Save workbook
@@ -420,3 +468,171 @@ function generateMFHoldingsSheet(workbook, transactionData) {
 module.exports = {
   generateExcelReport
 };
+
+
+/**
+ * Generates Calculation Log sheet for validation
+ * Shows ISIN to NAV mappings
+ */
+function generateCalculationLogSheet(workbook, calculationLogs) {
+  const worksheet = workbook.addWorksheet('NAV Mapping Log');
+  
+  // Add columns - simplified to show only ISIN and NAV mappings
+  worksheet.columns = [
+    { header: 'Row #', key: 'rowNum', width: 10 },
+    { header: 'ISIN', key: 'isin', width: 15 },
+    { header: 'Scheme Name', key: 'schemeName', width: 50 },
+    { header: 'Date', key: 'transactionDate', width: 15 },
+    { header: 'NAV Value', key: 'navUsed', width: 15 },
+    { header: 'NAV Source', key: 'navSource', width: 30 }
+  ];
+  
+  // Style header row
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF4472C4' }
+  };
+  headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+  headerRow.height = 20;
+  
+  // Add data rows - only show entries with ISIN and NAV
+  let rowIndex = 0;
+  calculationLogs.forEach((log, index) => {
+    // Only add rows that have ISIN and NAV information
+    if (log.isin && log.navUsed) {
+      rowIndex++;
+      const row = worksheet.addRow({
+        rowNum: rowIndex,
+        isin: log.isin,
+        schemeName: log.schemeName || '',
+        transactionDate: log.transactionDate || '',
+        navUsed: log.navUsed,
+        navSource: log.navSource || 'Transaction Data'
+      });
+      
+      // Format NAV value
+      if (log.navUsed !== null && log.navUsed !== undefined) {
+        row.getCell('navUsed').numFmt = '#,##0.0000';
+      }
+      
+      // Alternate row colors
+      if (rowIndex % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF2F2F2' }
+        };
+      }
+    }
+  });
+  
+  // Freeze header row and first 2 columns
+  worksheet.views = [{ state: 'frozen', xSplit: 2, ySplit: 1 }];
+  
+  // Add auto-filter
+  worksheet.autoFilter = {
+    from: 'A1',
+    to: `F${rowIndex + 1}`
+  };
+}
+
+
+/**
+ * Generates User Summary sheet with key metrics
+ * Single row format for easy appending to Google Sheets
+ */
+function generateUserSummarySheet(workbook, userInfo, portfolioData, dateRangeInfo) {
+  const worksheet = workbook.addWorksheet('User Summary', { state: 'visible' });
+  
+  // Calculate metrics
+  const totalCostValue = portfolioData.total?.costValue || 0;
+  const totalMarketValue = portfolioData.total?.marketValue || 0;
+  const totalGains = totalMarketValue - totalCostValue;
+  const revenuePercentage = totalCostValue > 0 ? ((totalGains / totalCostValue) * 100) : 0;
+  
+  // Calculate NAV breakdown (top 5 funds by market value)
+  const sortedFunds = [...(portfolioData.portfolioSummary || [])]
+    .sort((a, b) => (b.marketValue || 0) - (a.marketValue || 0))
+    .slice(0, 5);
+  
+  const navBreakdown = sortedFunds.map(fund => {
+    const percentage = totalMarketValue > 0 ? ((fund.marketValue / totalMarketValue) * 100) : 0;
+    return `${fund.fundName}: ${percentage.toFixed(2)}%`;
+  }).join(' | ');
+  
+  // Add columns for single-row format
+  worksheet.columns = [
+    { header: 'Date', key: 'date', width: 15 },
+    { header: 'Name', key: 'name', width: 25 },
+    { header: 'Email', key: 'email', width: 30 },
+    { header: 'Phone', key: 'phone', width: 20 },
+    { header: 'Period', key: 'period', width: 25 },
+    { header: 'Total Investment (₹)', key: 'investment', width: 20 },
+    { header: 'Current Value (₹)', key: 'currentValue', width: 20 },
+    { header: 'Total Gains (₹)', key: 'gains', width: 20 },
+    { header: 'Revenue %', key: 'revenuePercent', width: 15 },
+    { header: 'Top 5 Funds Breakdown', key: 'navBreakdown', width: 80 }
+  ];
+  
+  // Style header row
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF2E75B6' }
+  };
+  headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+  headerRow.height = 25;
+  
+  // Add data row
+  const dataRow = worksheet.addRow({
+    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+    name: userInfo.name || 'N/A',
+    email: userInfo.email || 'N/A',
+    phone: userInfo.phone || 'N/A',
+    period: dateRangeInfo?.fullDateRange || 'N/A',
+    investment: totalCostValue,
+    currentValue: totalMarketValue,
+    gains: totalGains,
+    revenuePercent: revenuePercentage,
+    navBreakdown: navBreakdown
+  });
+  
+  // Format numbers
+  dataRow.getCell('investment').numFmt = '#,##0.00';
+  dataRow.getCell('currentValue').numFmt = '#,##0.00';
+  dataRow.getCell('gains').numFmt = '#,##0.00';
+  dataRow.getCell('revenuePercent').numFmt = '0.00"%"';
+  
+  // Color code gains
+  if (totalGains >= 0) {
+    dataRow.getCell('gains').font = { color: { argb: 'FF006400' }, bold: true };
+    dataRow.getCell('revenuePercent').font = { color: { argb: 'FF006400' }, bold: true };
+  } else {
+    dataRow.getCell('gains').font = { color: { argb: 'FFDC143C' }, bold: true };
+    dataRow.getCell('revenuePercent').font = { color: { argb: 'FFDC143C' }, bold: true };
+  }
+  
+  // Add summary section below
+  worksheet.addRow([]);
+  worksheet.addRow(['Summary Metrics']);
+  worksheet.getRow(3).font = { bold: true, size: 12 };
+  
+  worksheet.addRow(['Total Funds', portfolioData.fundCount || 0]);
+  worksheet.addRow(['Total Investment', totalCostValue]);
+  worksheet.addRow(['Current Market Value', totalMarketValue]);
+  worksheet.addRow(['Total Gains/Loss', totalGains]);
+  worksheet.addRow(['Return Percentage', `${revenuePercentage.toFixed(2)}%`]);
+  
+  // Format summary values
+  worksheet.getCell('B5').numFmt = '#,##0.00';
+  worksheet.getCell('B6').numFmt = '#,##0.00';
+  worksheet.getCell('B7').numFmt = '#,##0.00';
+  
+  // Freeze header row
+  worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }];
+}

@@ -68,6 +68,14 @@ const OutputOptions = ({ outputFormat, selectedSheets, onFormatChange, onSheetTo
               />
               <span>MF Holdings</span>
             </label>
+            <label className="sheet-option">
+              <input
+                type="checkbox"
+                checked={selectedSheets[SHEET_TYPES.RETURNS]}
+                onChange={() => onSheetToggle(SHEET_TYPES.RETURNS)}
+              />
+              <span>Return Calculation</span>
+            </label>
           </div>
         </div>
       )}

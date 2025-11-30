@@ -7,6 +7,7 @@ const upload = require('../middleware/upload');
 const { extractTextFromPDF } = require('../extractors/pdfExtractor');
 const { extractPortfolioSummary } = require('../extractors/portfolioExtractor');
 const { extractFundTransactions } = require('../extractors/transactionExtractor');
+const { extractDateRange } = require('../extractors/dateRangeExtractor');
 const { generateExcelReport } = require('../extractors/excelGenerator');
 
 /**
@@ -64,6 +65,9 @@ router.post('/extract-cas-batch', upload.array('pdfs', 50), async (req, res) => 
           throw new Error('Extracted text is too short');
         }
         
+        // Extract date range
+        const dateRangeInfo = extractDateRange(textContent);
+        
         // Extract portfolio summary
         const portfolioData = extractPortfolioSummary(textContent);
         
@@ -92,6 +96,7 @@ router.post('/extract-cas-batch', upload.array('pdfs', 50), async (req, res) => 
               extractedAt: new Date().toISOString(),
               sourceFile: file.originalname
             },
+            dateRangeInfo,
             portfolioData,
             transactionData
           };

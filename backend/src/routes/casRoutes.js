@@ -7,6 +7,10 @@ const { extractTextFromPDF } = require('../extractors/pdfExtractor');
 const { extractPortfolioSummary } = require('../extractors/portfolioExtractor');
 const { extractFundTransactions } = require('../extractors/transactionExtractor');
 const { generateExcelReport } = require('../extractors/excelGenerator');
+const { extractDateRange } = require('../extractors/dateRangeExtractor');
+const { fetchNAVHistory } = require('../utils/navFetcher');
+const { extractUserInfo } = require('../extractors/userInfoExtractor');
+const { appendToGoogleSheet, ensureGoogleSheetHeader } = require('../utils/googleSheetsAppender');
 
 /**
  * POST /api/extract-cas
@@ -30,7 +34,7 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
     uploadedFilePath = req.file.path;
     const password = req.body.password || null;
     const outputFormat = req.body.outputFormat || 'excel'; // excel, json, text
-    const selectedSheets = req.body.sheets ? JSON.parse(req.body.sheets) : ['portfolio', 'transactions', 'holdings'];
+    const selectedSheets = req.body.sheets ? JSON.parse(req.body.sheets) : ['portfolio', 'transactions', 'holdings', 'returns'];
     
     console.log(`\n📄 Processing CAS PDF: ${req.file.originalname}`);
     console.log(`   File size: ${(req.file.size / 1024 / 1024).toFixed(2)} MB`);
@@ -46,7 +50,19 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       throw new Error('Extracted text is too short. PDF may be empty or corrupted.');
     }
     
-    // Step 2 & 3: Extract portfolio and transactions in parallel
+    // Save extracted text to test.txt for debugging
+    const testFilePath = path.join(__dirname, '../../output', 'test.txt');
+    fs.writeFileSync(testFilePath, textContent, 'utf8');
+    console.log(`   ✓ Saved extracted text to: test.txt`);
+    
+    // Step 2: Extract user information
+    const userInfo = extractUserInfo(textContent);
+    
+    // Step 3: Extract date range
+    const dateRangeInfo = extractDateRange(textContent);
+    console.log(`   Date Range: ${dateRangeInfo.fullDateRange || 'Not found'}`);
+    
+    // Step 4 & 5: Extract portfolio and transactions in parallel
     const [portfolioData, transactionData] = await Promise.all([
       Promise.resolve(extractPortfolioSummary(textContent)),
       Promise.resolve(extractFundTransactions(textContent, extractPortfolioSummary(textContent)))
@@ -56,6 +72,11 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       const transactions = extractFundTransactions(textContent, portfolio);
       return [portfolio, transactions];
     });
+    
+    // Save portfolio data to test file for debugging
+    const portfolioTestFilePath = path.join(__dirname, '../../output', 'test-portfolio.txt');
+    fs.writeFileSync(portfolioTestFilePath, JSON.stringify(portfolioData, null, 2), 'utf8');
+    console.log(`   ✓ Saved portfolio data to: test-portfolio.txt`);
     
     if (!portfolioData.portfolioSummary || portfolioData.portfolioSummary.length === 0) {
       throw new Error('No portfolio data found. Please ensure this is a valid CAS PDF.');
@@ -94,6 +115,8 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
           sourceFile: req.file.originalname,
           summary
         },
+        userInfo,
+        dateRangeInfo,
         portfolioData,
         transactionData,
         rawText: textContent
@@ -118,9 +141,54 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       fileName = `${originalName}_CAS_Report_${timestamp}.xlsx`;
       outputFilePath = path.join(__dirname, '../../output', fileName);
       
-      await generateExcelReport(portfolioData, transactionData, outputFilePath, selectedSheets);
+      // Fetch NAV history if returns sheet is requested
+      let navHistoryData = null;
+      if (selectedSheets.includes('returns') && dateRangeInfo.openingDateRange) {
+        try {
+          console.log('📊 Fetching NAV history for return calculation...');
+          navHistoryData = await fetchNAVHistory(dateRangeInfo.openingDateRange);
+        } catch (navError) {
+          console.warn('⚠️  Could not fetch NAV history:', navError.message);
+        }
+      }
+      
+      await generateExcelReport(portfolioData, transactionData, outputFilePath, selectedSheets, dateRangeInfo, navHistoryData, userInfo);
       contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       console.log(`✓ Excel file saved: ${fileName}`);
+      
+      // Append summary to Google Sheets (if configured)
+      if (userInfo) {
+        const totalCostValue = portfolioData.total?.costValue || 0;
+        const totalMarketValue = portfolioData.total?.marketValue || 0;
+        const totalGains = totalMarketValue - totalCostValue;
+        const revenuePercentage = totalCostValue > 0 ? ((totalGains / totalCostValue) * 100) : 0;
+        
+        // Calculate NAV breakdown
+        const sortedFunds = [...(portfolioData.portfolioSummary || [])]
+          .sort((a, b) => (b.marketValue || 0) - (a.marketValue || 0))
+          .slice(0, 5);
+        const navBreakdown = sortedFunds.map(fund => {
+          const percentage = totalMarketValue > 0 ? ((fund.marketValue / totalMarketValue) * 100) : 0;
+          return `${fund.fundName}: ${percentage.toFixed(2)}%`;
+        }).join(' | ');
+        
+        const summaryData = {
+          date: new Date().toISOString().split('T')[0],
+          name: userInfo.name || 'N/A',
+          email: userInfo.email || 'N/A',
+          phone: userInfo.phone || 'N/A',
+          period: dateRangeInfo?.fullDateRange || 'N/A',
+          investment: totalCostValue,
+          currentValue: totalMarketValue,
+          gains: totalGains,
+          revenuePercent: revenuePercentage.toFixed(2) + '%',
+          navBreakdown: navBreakdown
+        };
+        
+        // Ensure header exists and append data
+        await ensureGoogleSheetHeader();
+        await appendToGoogleSheet(summaryData);
+      }
     }
     
     // Send file as download with proper headers

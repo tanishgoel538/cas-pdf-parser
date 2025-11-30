@@ -14,13 +14,15 @@ export const OUTPUT_FORMATS = {
 export const SHEET_TYPES = {
   PORTFOLIO: 'portfolio',
   TRANSACTIONS: 'transactions',
-  HOLDINGS: 'holdings'
+  HOLDINGS: 'holdings',
+  RETURNS: 'returns'
 };
 
 export const DEFAULT_SHEETS = {
   [SHEET_TYPES.PORTFOLIO]: true,
   [SHEET_TYPES.TRANSACTIONS]: true,
-  [SHEET_TYPES.HOLDINGS]: true
+  [SHEET_TYPES.HOLDINGS]: true,
+  [SHEET_TYPES.RETURNS]: true
 };
 
 export const MIME_TYPES = {

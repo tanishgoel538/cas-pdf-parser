@@ -171,8 +171,59 @@ function extractISINInfo(folioText) {
   }
   
   if (startIndex === -1) {
-    console.warn('ISIN marker not found in folio text');
-    return { isinLine: null, schemeName: null, isin: null, registrar: null, advisor: null };
+    console.warn('ISIN marker not found in folio text - attempting fallback extraction');
+    
+    // Fallback: Try to extract scheme name from line before "Folio No:"
+    let fallbackSchemeName = null;
+    let fallbackRegistrar = null;
+    let fallbackAdvisor = null;
+    let fallbackIsinLine = null;
+    
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes('Folio No:')) {
+        // Look at previous lines for scheme info
+        for (let j = Math.max(0, i - 3); j < i; j++) {
+          const line = lines[j].trim();
+          if (line && !line.includes('PAN:') && !line.includes('KYC:')) {
+            fallbackIsinLine = line;
+            
+            // Extract scheme name (remove scheme code prefix if present)
+            let schemePart = line;
+            
+            // Extract Registrar if present
+            const regMatch = line.match(/Registrar\s*:\s*(.+?)(?:\s*$)/);
+            if (regMatch) {
+              fallbackRegistrar = regMatch[1].trim();
+              schemePart = line.substring(0, line.indexOf('Registrar')).trim();
+            }
+            
+            // Extract Advisor if present
+            const advMatch = schemePart.match(/(?:\()?Advisor[:\s]+([A-Z0-9]+-?[A-Z0-9]*)(?:\))?/);
+            if (advMatch) {
+              fallbackAdvisor = advMatch[1].trim();
+              schemePart = schemePart.substring(0, schemePart.indexOf('Advisor')).trim();
+            }
+            
+            // Remove scheme code prefix and clean up (handles patterns like "17832RG-" or "FTI061-")
+            fallbackSchemeName = schemePart.replace(/^[A-Z0-9]+-/, '').trim();
+            
+            // Remove trailing dashes or parentheses
+            fallbackSchemeName = fallbackSchemeName.replace(/[-\s(]+$/, '').trim();
+            
+            break;
+          }
+        }
+        break;
+      }
+    }
+    
+    return { 
+      isinLine: fallbackIsinLine, 
+      schemeName: fallbackSchemeName, 
+      isin: null, 
+      registrar: fallbackRegistrar, 
+      advisor: fallbackAdvisor 
+    };
   }
   
   // Look backward to find the start of the scheme name
@@ -211,8 +262,10 @@ function extractISINInfo(folioText) {
   // Extract components with improved patterns using the complete isinLine
   // Pattern: SchemeCode-SchemeName - ISIN: ISINCode (Advisor: AdvisorCode) Registrar : RegistrarName
   
-  // Extract ISIN
-  const isinMatch = isinLine.match(/ISIN:\s*([A-Z0-9]+)/);
+  // Extract ISIN - handle spaces in ISIN codes (e.g., "INF 109K018N2")
+  // ISIN format: exactly 12 characters (2 letters + 10 alphanumeric), may have spaces
+  // Match up to 15 chars to account for spaces, then trim to 12 after removing spaces
+  const isinMatch = isinLine.match(/ISIN:\s*([A-Z0-9\s]{12,15})/);
   
   // Extract Scheme Name: from after scheme code until " - ISIN:" or "- ISIN:"
   // This ensures we get the complete scheme name from the concatenated isinLine
@@ -238,7 +291,7 @@ function extractISINInfo(folioText) {
   return {
     isinLine,
     schemeName,
-    isin: isinMatch ? isinMatch[1] : null,
+    isin: isinMatch ? isinMatch[1].trim().replace(/\s+/g, '').substring(0, 12) : null, // Remove spaces and limit to 12 chars
     registrar: registrarMatch ? registrarMatch[1].trim() : null,
     advisor: advisorMatch ? advisorMatch[1].trim() : null
   };
@@ -551,6 +604,17 @@ function parseFolios(fundSectionText) {
     const { folioNumber, investorName, nominees } = extractFolioAndInvestorDetails(folioText);
     const { openingUnitBalance, closingUnitBalance, totalCostValue, marketValue, navOnDate } = extractBalanceAndValue(folioText);
     const transactions = parseTransactions(folioText);
+    
+    // Console log parsed folio info
+    console.log(`\n📋 Folio Parsed:`);
+    console.log(`   Folio Number: ${folioNumber || 'N/A'}`);
+    console.log(`   Scheme: ${schemeName || 'N/A'}`);
+    console.log(`   ISIN: ${isin || 'N/A'}`);
+    console.log(`   Investor: ${investorName || 'N/A'}`);
+    console.log(`   Opening Units: ${openingUnitBalance !== null ? openingUnitBalance : 'N/A'}`);
+    console.log(`   Closing Units: ${closingUnitBalance !== null ? closingUnitBalance : 'N/A'}`);
+    console.log(`   Market Value: ₹${marketValue !== null ? marketValue.toFixed(2) : 'N/A'}`);
+    console.log(`   Transactions: ${transactions.length}`);
     
     folios.push({
       pan, kycStatus, isinLine, schemeName, isin, folioNumber,
