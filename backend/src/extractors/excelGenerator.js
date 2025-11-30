@@ -89,18 +89,24 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
       if (returnSheet) {
         // Find XIRR row (usually near the end)
         returnSheet.eachRow((row, rowNumber) => {
-          const firstCell = row.getCell(1).value;
-          if (firstCell && typeof firstCell === 'string' && firstCell.includes('XIRR')) {
-            const portfolioXirrValue = row.getCell(2).value;
-            const niftyXirrValue = row.getCell(3).value;
+          const nameCell = row.getCell(2).value; // Column B (name)
+          if (nameCell && typeof nameCell === 'string' && nameCell.includes('XIRR')) {
+            // Portfolio XIRR is in column C (transaction)
+            const portfolioXirrValue = row.getCell(3).value;
+            // NIFTY XIRR is in column F (niftyValue)
+            const niftyXirrValue = row.getCell(6).value;
             
             if (portfolioXirrValue) {
               xirrData = xirrData || {};
-              xirrData.portfolioXirr = typeof portfolioXirrValue === 'number' ? portfolioXirrValue : parseFloat(portfolioXirrValue);
+              // Parse percentage string like "13.46%" to decimal 0.1346
+              const percentStr = String(portfolioXirrValue).replace('%', '');
+              xirrData.portfolioXirr = parseFloat(percentStr) / 100;
             }
             if (niftyXirrValue) {
               xirrData = xirrData || {};
-              xirrData.niftyXirr = typeof niftyXirrValue === 'number' ? niftyXirrValue : parseFloat(niftyXirrValue);
+              // Parse percentage string like "12.81%" to decimal 0.1281
+              const percentStr = String(niftyXirrValue).replace('%', '');
+              xirrData.niftyXirr = parseFloat(percentStr) / 100;
             }
           }
         });
