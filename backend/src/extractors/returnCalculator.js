@@ -77,7 +77,6 @@ function parseDateForXIRR(dateStr) {
  */
 async function generateReturnCalculationSheet(workbook, transactionData, dateRangeInfo, navHistoryData, niftyData = null) {
   try {
-    console.log('📊 Starting Return Calculation sheet generation...');
     const worksheet = workbook.addWorksheet('Return Calculation');
     
     // Add columns (include NIFTY 50 if data available)
@@ -104,14 +103,11 @@ async function generateReturnCalculationSheet(workbook, transactionData, dateRan
     const { getNiftyValueForDate } = niftyData ? require('../utils/niftyFetcher') : {};
     
     // Step 1: Parse NAV history for opening balance calculation
-    console.log('   Parsing NAV history...');
     const navMap = parseNAVHistory(navHistoryData);
-    console.log(`   Found ${navMap.size} unique ISINs in NAV data`);
     
     // Step 2: Get opening and closing dates (use exact strings from PDF)
     const openingDateStr = dateRangeInfo.openingDateRange; // "01-Jan-2014"
     const closingDateStr = dateRangeInfo.closingDateRange; // "17-Nov-2025"
-    console.log(`   Opening date: ${openingDateStr}`);
   
   // Step 3: Calculate opening balance
   let openingBalance = 0;
@@ -599,19 +595,6 @@ async function generateReturnCalculationSheet(workbook, transactionData, dateRan
   
   // Freeze header row
   worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }];
-  
-    console.log(`✓ Return Calculation sheet created`);
-    console.log(`   Cash flows: ${cashFlows.length}`);
-    console.log(`   Portfolio XIRR: ${xirrPercentage}%`);
-    console.log(`   Portfolio Total Gains: ₹${totalGains.toFixed(2)}`);
-    console.log(`   Total Purchases: ₹${totalPurchases.toFixed(2)}`);
-    console.log(`   Total Redemptions: ₹${totalRedemptions.toFixed(2)}`);
-    console.log(`   Calculation logs collected: ${calculationLogs.length}`);
-    
-    if (niftyData && niftyValueXirrPercentage) {
-      console.log(`   NIFTY Value XIRR: ${niftyValueXirrPercentage}%`);
-      console.log(`   NIFTY Value Total Gains: ₹${niftyValueTotalGains.toFixed(2)}`);
-    }
     
     return calculationLogs; // Return logs for validation sheet
     

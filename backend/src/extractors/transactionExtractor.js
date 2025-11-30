@@ -605,17 +605,6 @@ function parseFolios(fundSectionText) {
     const { openingUnitBalance, closingUnitBalance, totalCostValue, marketValue, navOnDate } = extractBalanceAndValue(folioText);
     const transactions = parseTransactions(folioText);
     
-    // Console log parsed folio info
-    console.log(`\n📋 Folio Parsed:`);
-    console.log(`   Folio Number: ${folioNumber || 'N/A'}`);
-    console.log(`   Scheme: ${schemeName || 'N/A'}`);
-    console.log(`   ISIN: ${isin || 'N/A'}`);
-    console.log(`   Investor: ${investorName || 'N/A'}`);
-    console.log(`   Opening Units: ${openingUnitBalance !== null ? openingUnitBalance : 'N/A'}`);
-    console.log(`   Closing Units: ${closingUnitBalance !== null ? closingUnitBalance : 'N/A'}`);
-    console.log(`   Market Value: ₹${marketValue !== null ? marketValue.toFixed(2) : 'N/A'}`);
-    console.log(`   Transactions: ${transactions.length}`);
-    
     folios.push({
       pan, kycStatus, isinLine, schemeName, isin, folioNumber,
       investorName, nominees, registrar, advisor,
@@ -675,22 +664,14 @@ function locateFundSections(fileContent, fundNames) {
 // Main extraction function
 function extractFundTransactions(textContent, portfolioData) {
   try {
-    console.log('Starting fund transaction extraction...');
-    
     const fundNames = portfolioData.portfolioSummary.map(fund => fund.fundName);
-    console.log(`✓ Found ${fundNames.length} funds from portfolio`);
-    
     const fundSections = locateFundSections(textContent, fundNames);
-    console.log(`✓ Located ${fundSections.length} fund sections`);
     
     let totalFolios = 0;
     fundSections.forEach(section => {
       section.folios = parseFolios(section.sectionText);
       totalFolios += section.folios.length;
-      console.log(`  - ${section.fundName}: ${section.folios.length} folios`);
     });
-    
-    console.log(`✓ Parsed ${totalFolios} folios across all funds`);
     
     const funds = fundSections.map(section => ({
       fundName: section.fundName,
