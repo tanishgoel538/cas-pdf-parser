@@ -65,8 +65,9 @@ async function appendToGoogleSheet(summaryData) {
     const sheets = google.sheets({ version: 'v4', auth });
     
     // Prepare row data - simplified columns
+    // Format date as string to prevent Excel serial number conversion
     const rowData = [
-      summaryData.date,
+      `'${summaryData.date}`, // Prefix with ' to force text format
       summaryData.name,
       summaryData.email,
       summaryData.phone,
@@ -78,16 +79,50 @@ async function appendToGoogleSheet(summaryData) {
       summaryData.niftyXirr || 'N/A'
     ];
     
-    // Append to sheet
+    // Append to sheet with RAW input to preserve formatting
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
       range: 'Sheet1!A:J', // 10 columns
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW', // Use RAW to prevent date conversion
       insertDataOption: 'INSERT_ROWS',
       resource: {
         values: [rowData]
       }
     });
+    
+    // Get the row number that was just added
+    const updatedRange = response.data.updates.updatedRange;
+    const rowMatch = updatedRange.match(/\d+$/);
+    
+    if (rowMatch) {
+      const rowNumber = parseInt(rowMatch[0]);
+      
+      // Format the newly added row (remove blue background, set white background)
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: sheetId,
+        resource: {
+          requests: [{
+            repeatCell: {
+              range: {
+                sheetId: 0,
+                startRowIndex: rowNumber - 1,
+                endRowIndex: rowNumber
+              },
+              cell: {
+                userEnteredFormat: {
+                  backgroundColor: { red: 1, green: 1, blue: 1 }, // White background
+                  textFormat: {
+                    foregroundColor: { red: 0, green: 0, blue: 0 }, // Black text
+                    bold: false
+                  }
+                }
+              },
+              fields: 'userEnteredFormat(backgroundColor,textFormat)'
+            }
+          }]
+        }
+      });
+    }
     
     console.log(`✓ Data appended to Google Sheet: ${response.data.updates.updatedRows} row(s)`);
     
