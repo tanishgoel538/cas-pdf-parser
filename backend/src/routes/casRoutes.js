@@ -152,7 +152,8 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
         }
       }
       
-      await generateExcelReport(portfolioData, transactionData, outputFilePath, selectedSheets, dateRangeInfo, navHistoryData, userInfo);
+      const result = await generateExcelReport(portfolioData, transactionData, outputFilePath, selectedSheets, dateRangeInfo, navHistoryData, userInfo);
+      const xirrData = result.xirrData;
       contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       console.log(`✓ Excel file saved: ${fileName}`);
       
@@ -161,16 +162,6 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
         const totalCostValue = portfolioData.total?.costValue || 0;
         const totalMarketValue = portfolioData.total?.marketValue || 0;
         const totalGains = totalMarketValue - totalCostValue;
-        const revenuePercentage = totalCostValue > 0 ? ((totalGains / totalCostValue) * 100) : 0;
-        
-        // Calculate NAV breakdown
-        const sortedFunds = [...(portfolioData.portfolioSummary || [])]
-          .sort((a, b) => (b.marketValue || 0) - (a.marketValue || 0))
-          .slice(0, 5);
-        const navBreakdown = sortedFunds.map(fund => {
-          const percentage = totalMarketValue > 0 ? ((fund.marketValue / totalMarketValue) * 100) : 0;
-          return `${fund.fundName}: ${percentage.toFixed(2)}%`;
-        }).join(' | ');
         
         const summaryData = {
           date: new Date().toISOString().split('T')[0],
@@ -181,8 +172,8 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
           investment: totalCostValue,
           currentValue: totalMarketValue,
           gains: totalGains,
-          revenuePercent: revenuePercentage.toFixed(2) + '%',
-          navBreakdown: navBreakdown
+          portfolioXirr: xirrData?.portfolioXirr ? (xirrData.portfolioXirr * 100).toFixed(2) + '%' : 'N/A',
+          niftyXirr: xirrData?.niftyXirr ? (xirrData.niftyXirr * 100).toFixed(2) + '%' : 'N/A'
         };
         
         // Ensure header exists and append data

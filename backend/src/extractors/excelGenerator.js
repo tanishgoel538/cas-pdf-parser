@@ -48,12 +48,6 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
       });
     }
     
-    // Sheet 0: User Summary (always generate if userInfo available)
-    if (userInfo) {
-      generateUserSummarySheet(workbook, userInfo, portfolioData, dateRangeInfo);
-      console.log('✓ User Summary sheet created');
-    }
-    
     // Sheet 1: Portfolio Summary
     if (sheets.includes('portfolio')) {
       generatePortfolioSummarySheet(workbook, portfolioData, holdingsTotalMarketValue);
@@ -73,6 +67,7 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
     }
     
     // Sheet 4: Return Calculation (if NAV data available)
+    let xirrData = null;
     if (sheets.includes('returns') && dateRangeInfo && navHistoryData) {
       const { generateReturnCalculationSheet } = require('./returnCalculator');
       const { fetchNifty50Data } = require('../utils/niftyFetcher');
@@ -89,6 +84,28 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
       const calculationLogs = await generateReturnCalculationSheet(workbook, transactionData, dateRangeInfo, navHistoryData, niftyData);
       console.log('✓ Return Calculation sheet created');
       
+      // Extract XIRR values from Return Calculation sheet
+      const returnSheet = workbook.getWorksheet('Return Calculation');
+      if (returnSheet) {
+        // Find XIRR row (usually near the end)
+        returnSheet.eachRow((row, rowNumber) => {
+          const firstCell = row.getCell(1).value;
+          if (firstCell && typeof firstCell === 'string' && firstCell.includes('XIRR')) {
+            const portfolioXirrValue = row.getCell(2).value;
+            const niftyXirrValue = row.getCell(3).value;
+            
+            if (portfolioXirrValue) {
+              xirrData = xirrData || {};
+              xirrData.portfolioXirr = typeof portfolioXirrValue === 'number' ? portfolioXirrValue : parseFloat(portfolioXirrValue);
+            }
+            if (niftyXirrValue) {
+              xirrData = xirrData || {};
+              xirrData.niftyXirr = typeof niftyXirrValue === 'number' ? niftyXirrValue : parseFloat(niftyXirrValue);
+            }
+          }
+        });
+      }
+      
       // Generate Calculation Log sheet for validation
       if (calculationLogs && calculationLogs.length > 0) {
         generateCalculationLogSheet(workbook, calculationLogs);
@@ -96,11 +113,12 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
       }
     }
     
-    // Save workbook
+    // Save workbook (User Summary sheet removed - only for Google Sheets)
     await workbook.xlsx.writeFile(outputPath);
     console.log(`✓ Excel report saved: ${outputPath}`);
     
-    return outputPath;
+    // Return XIRR data for Google Sheets append
+    return { outputPath, xirrData };
     
   } catch (error) {
     console.error('Error generating Excel report:', error.message);
@@ -544,7 +562,7 @@ function generateCalculationLogSheet(workbook, calculationLogs) {
  * Generates User Summary sheet with key metrics
  * Single row format for easy appending to Google Sheets
  */
-function generateUserSummarySheet(workbook, userInfo, portfolioData, dateRangeInfo) {
+function generateUserSummarySheet(workbook, userInfo, portfolioData, dateRangeInfo, xirrData = null) {
   const worksheet = workbook.addWorksheet('User Summary', { state: 'visible' });
   
   // Calculate metrics
@@ -574,6 +592,8 @@ function generateUserSummarySheet(workbook, userInfo, portfolioData, dateRangeIn
     { header: 'Current Value (₹)', key: 'currentValue', width: 20 },
     { header: 'Total Gains (₹)', key: 'gains', width: 20 },
     { header: 'Revenue %', key: 'revenuePercent', width: 15 },
+    { header: 'Portfolio XIRR %', key: 'portfolioXirr', width: 18 },
+    { header: 'NIFTY 50 XIRR %', key: 'niftyXirr', width: 18 },
     { header: 'Top 5 Funds Breakdown', key: 'navBreakdown', width: 80 }
   ];
   
@@ -599,6 +619,8 @@ function generateUserSummarySheet(workbook, userInfo, portfolioData, dateRangeIn
     currentValue: totalMarketValue,
     gains: totalGains,
     revenuePercent: revenuePercentage,
+    portfolioXirr: xirrData?.portfolioXirr || null,
+    niftyXirr: xirrData?.niftyXirr || null,
     navBreakdown: navBreakdown
   });
   
@@ -607,14 +629,28 @@ function generateUserSummarySheet(workbook, userInfo, portfolioData, dateRangeIn
   dataRow.getCell('currentValue').numFmt = '#,##0.00';
   dataRow.getCell('gains').numFmt = '#,##0.00';
   dataRow.getCell('revenuePercent').numFmt = '0.00"%"';
+  if (xirrData?.portfolioXirr) {
+    dataRow.getCell('portfolioXirr').numFmt = '0.00"%"';
+  }
+  if (xirrData?.niftyXirr) {
+    dataRow.getCell('niftyXirr').numFmt = '0.00"%"';
+  }
   
-  // Color code gains
+  // Color code gains and XIRR
   if (totalGains >= 0) {
     dataRow.getCell('gains').font = { color: { argb: 'FF006400' }, bold: true };
     dataRow.getCell('revenuePercent').font = { color: { argb: 'FF006400' }, bold: true };
   } else {
     dataRow.getCell('gains').font = { color: { argb: 'FFDC143C' }, bold: true };
     dataRow.getCell('revenuePercent').font = { color: { argb: 'FFDC143C' }, bold: true };
+  }
+  
+  // Color code XIRR values
+  if (xirrData?.portfolioXirr) {
+    dataRow.getCell('portfolioXirr').font = { color: { argb: 'FF006400' }, bold: true };
+  }
+  if (xirrData?.niftyXirr) {
+    dataRow.getCell('niftyXirr').font = { color: { argb: 'FF4169E1' }, bold: true }; // Blue for benchmark
   }
   
   // Add summary section below

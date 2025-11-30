@@ -64,7 +64,7 @@ async function appendToGoogleSheet(summaryData) {
     
     const sheets = google.sheets({ version: 'v4', auth });
     
-    // Prepare row data
+    // Prepare row data - simplified columns
     const rowData = [
       summaryData.date,
       summaryData.name,
@@ -74,14 +74,14 @@ async function appendToGoogleSheet(summaryData) {
       summaryData.investment,
       summaryData.currentValue,
       summaryData.gains,
-      summaryData.revenuePercent,
-      summaryData.navBreakdown
+      summaryData.portfolioXirr || 'N/A',
+      summaryData.niftyXirr || 'N/A'
     ];
     
     // Append to sheet
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: 'Sheet1!A:J', // Adjust sheet name if needed
+      range: 'Sheet1!A:J', // 10 columns
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
       resource: {
@@ -143,7 +143,7 @@ async function ensureGoogleSheetHeader() {
     });
     
     if (!response.data.values || response.data.values.length === 0) {
-      // Add header row
+      // Add header row - simplified columns
       const headerRow = [
         'Date',
         'Name',
@@ -153,8 +153,8 @@ async function ensureGoogleSheetHeader() {
         'Total Investment (₹)',
         'Current Value (₹)',
         'Total Gains (₹)',
-        'Revenue %',
-        'Top 5 Funds Breakdown'
+        'Portfolio XIRR %',
+        'NIFTY 50 XIRR %'
       ];
       
       await sheets.spreadsheets.values.update({
