@@ -13,9 +13,6 @@ const ExcelJS = require('exceljs');
  */
 async function generateExcelReport(portfolioData, transactionData, outputPath, sheets = ['portfolio', 'transactions', 'holdings'], dateRangeInfo = null, navHistoryData = null, userInfo = null) {
   try {
-    console.log('Starting Excel report generation...');
-    console.log('Selected sheets:', sheets);
-    
     const workbook = new ExcelJS.Workbook();
     
     // Set workbook properties with user info
@@ -51,19 +48,16 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
     // Sheet 1: Portfolio Summary
     if (sheets.includes('portfolio')) {
       generatePortfolioSummarySheet(workbook, portfolioData, holdingsTotalMarketValue);
-      console.log('✓ Portfolio Summary sheet created');
     }
     
     // Sheet 2: Transactions
     if (sheets.includes('transactions')) {
       generateTransactionsSheet(workbook, transactionData);
-      console.log('✓ Transactions sheet created');
     }
     
     // Sheet 3: MF Holdings
     if (sheets.includes('holdings')) {
       generateMFHoldingsSheet(workbook, transactionData);
-      console.log('✓ MF Holdings sheet created');
     }
     
     // Sheet 4: Return Calculation (if NAV data available)
@@ -75,14 +69,12 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
       // Fetch NIFTY 50 data
       let niftyData = null;
       try {
-        console.log('📈 Fetching NIFTY 50 data for benchmark comparison...');
         niftyData = await fetchNifty50Data(dateRangeInfo.openingDateRange, dateRangeInfo.closingDateRange);
       } catch (niftyError) {
         console.warn('⚠️  Could not fetch NIFTY 50 data:', niftyError.message);
       }
       
       const calculationLogs = await generateReturnCalculationSheet(workbook, transactionData, dateRangeInfo, navHistoryData, niftyData);
-      console.log('✓ Return Calculation sheet created');
       
       // Extract XIRR values from Return Calculation sheet
       const returnSheet = workbook.getWorksheet('Return Calculation');
@@ -115,13 +107,11 @@ async function generateExcelReport(portfolioData, transactionData, outputPath, s
       // Generate Calculation Log sheet for validation
       if (calculationLogs && calculationLogs.length > 0) {
         generateCalculationLogSheet(workbook, calculationLogs);
-        console.log('✓ Calculation Log sheet created');
       }
     }
     
     // Save workbook (User Summary sheet removed - only for Google Sheets)
     await workbook.xlsx.writeFile(outputPath);
-    console.log(`✓ Excel report saved: ${outputPath}`);
     
     // Return XIRR data for Google Sheets append
     return { outputPath, xirrData };
@@ -159,9 +149,6 @@ function generatePortfolioSummarySheet(workbook, portfolioData, holdingsTotalMar
     
     // Add total row if available
     if (portfolioData.total) {
-      console.log('Adding total row:', portfolioData.total);
-      console.log('Holdings total market value:', holdingsTotalMarketValue);
-      
       const totalRow = worksheet.addRow({
         fundName: 'Total',
         costValue: portfolioData.total.costValue,
@@ -203,8 +190,6 @@ function generatePortfolioSummarySheet(workbook, portfolioData, holdingsTotalMar
           marketValueCell.font = { bold: true, color: { argb: 'FF8B0000' } }; // Dark red text
         }
       }
-    } else {
-      console.log('No total data found in portfolioData:', portfolioData);
     }
   }
   

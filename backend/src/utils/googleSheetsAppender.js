@@ -14,7 +14,6 @@
 
 const { google } = require('googleapis');
 const fs = require('fs');
-const path = require('path');
 
 /**
  * Appends user summary row to Google Sheet
@@ -40,15 +39,11 @@ async function appendToGoogleSheet(summaryData) {
       return { success: false, message: 'Not configured' };
     }
     
-    console.log('📊 Appending data to Google Sheet...');
-    
     // Load credentials from environment variable (Render) or file (local)
     let credentials;
     if (credentialsEnv) {
-      console.log('   Using credentials from environment variable');
       credentials = JSON.parse(credentialsEnv);
     } else if (credentialsPath) {
-      console.log('   Using credentials from file');
       if (!fs.existsSync(credentialsPath)) {
         console.warn(`⚠️  Credentials file not found: ${credentialsPath}`);
         return { success: false, message: 'Credentials file not found' };
@@ -227,7 +222,6 @@ async function ensureGoogleSheetHeader() {
         }
       });
       
-      console.log('✓ Header row created in Google Sheet');
     }
     
     return { success: true, message: 'Header ensured' };

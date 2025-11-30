@@ -36,11 +36,7 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
     const outputFormat = req.body.outputFormat || 'excel'; // excel, json, text
     const selectedSheets = req.body.sheets ? JSON.parse(req.body.sheets) : ['portfolio', 'transactions', 'holdings', 'returns'];
     
-    console.log(`\n📄 Processing CAS PDF: ${req.file.originalname}`);
-    console.log(`   File size: ${(req.file.size / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`   Output format: ${outputFormat}`);
-    if (password) console.log(`   Password protected: Yes`);
-    if (outputFormat === 'excel') console.log(`   Selected sheets: ${selectedSheets.join(', ')}`);
+
     
     // Step 1: Extract text from PDF
     const startTime = Date.now();
@@ -50,17 +46,13 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       throw new Error('Extracted text is too short. PDF may be empty or corrupted.');
     }
     
-    // Save extracted text to test.txt for debugging
-    const testFilePath = path.join(__dirname, '../../output', 'test.txt');
-    fs.writeFileSync(testFilePath, textContent, 'utf8');
-    console.log(`   ✓ Saved extracted text to: test.txt`);
+
     
     // Step 2: Extract user information
     const userInfo = extractUserInfo(textContent);
     
     // Step 3: Extract date range
     const dateRangeInfo = extractDateRange(textContent);
-    console.log(`   Date Range: ${dateRangeInfo.fullDateRange || 'Not found'}`);
     
     // Step 4 & 5: Extract portfolio and transactions in parallel
     const [portfolioData, transactionData] = await Promise.all([
@@ -73,10 +65,7 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       return [portfolio, transactions];
     });
     
-    // Save portfolio data to test file for debugging
-    const portfolioTestFilePath = path.join(__dirname, '../../output', 'test-portfolio.txt');
-    fs.writeFileSync(portfolioTestFilePath, JSON.stringify(portfolioData, null, 2), 'utf8');
-    console.log(`   ✓ Saved portfolio data to: test-portfolio.txt`);
+
     
     if (!portfolioData.portfolioSummary || portfolioData.portfolioSummary.length === 0) {
       throw new Error('No portfolio data found. Please ensure this is a valid CAS PDF.');
@@ -95,9 +84,7 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
           folioTotal + (folio.transactions?.length || 0), 0), 0)
     };
     
-    const processingTime = Date.now() - startTime;
-    console.log(`\n✅ Extraction Complete in ${processingTime}ms!`);
-    console.log(`   Funds: ${summary.totalFunds} | Folios: ${summary.totalFolios} | Transactions: ${summary.totalTransactions}`);
+
     
     const timestamp = Date.now();
     const originalName = path.parse(req.file.originalname).name;
@@ -105,7 +92,6 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
     
     // Step 4: Generate output based on format
     if (outputFormat === 'json') {
-      console.log('\n📦 Step 4: Generating JSON output...');
       fileName = `${originalName}_CAS_Data_${timestamp}.json`;
       outputFilePath = path.join(__dirname, '../../output', fileName);
       
@@ -124,20 +110,16 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       
       fs.writeFileSync(outputFilePath, JSON.stringify(jsonData, null, 2));
       contentType = 'application/json';
-      console.log(`✓ JSON file saved: ${fileName}`);
       
     } else if (outputFormat === 'text') {
-      console.log('\n📝 Step 4: Generating text output...');
       fileName = `${originalName}_CAS_Extracted_${timestamp}.txt`;
       outputFilePath = path.join(__dirname, '../../output', fileName);
       
       fs.writeFileSync(outputFilePath, textContent);
       contentType = 'text/plain';
-      console.log(`✓ Text file saved: ${fileName}`);
       
     } else {
       // Default: Excel
-      console.log('\n📈 Step 4: Generating Excel report...');
       fileName = `${originalName}_CAS_Report_${timestamp}.xlsx`;
       outputFilePath = path.join(__dirname, '../../output', fileName);
       
@@ -145,7 +127,6 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       let navHistoryData = null;
       if (selectedSheets.includes('returns') && dateRangeInfo.openingDateRange) {
         try {
-          console.log('📊 Fetching NAV history for return calculation...');
           navHistoryData = await fetchNAVHistory(dateRangeInfo.openingDateRange);
         } catch (navError) {
           console.warn('⚠️  Could not fetch NAV history:', navError.message);
@@ -156,7 +137,6 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       const xirrData = result.xirrData;
       outputFilePath = result.outputPath; // Update outputFilePath from result
       contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      console.log(`✓ Excel file saved: ${fileName}`);
       
       // Append summary to Google Sheets (if configured)
       if (userInfo) {
@@ -209,7 +189,6 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       setTimeout(() => {
         if (outputFilePath && fs.existsSync(outputFilePath)) {
           fs.unlinkSync(outputFilePath);
-          console.log(`🗑️  Cleaned up: ${fileName}`);
         }
       }, 5 * 60 * 1000);
     });
