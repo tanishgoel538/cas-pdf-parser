@@ -154,6 +154,7 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
       
       const result = await generateExcelReport(portfolioData, transactionData, outputFilePath, selectedSheets, dateRangeInfo, navHistoryData, userInfo);
       const xirrData = result.xirrData;
+      outputFilePath = result.outputPath; // Update outputFilePath from result
       contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       console.log(`✓ Excel file saved: ${fileName}`);
       
