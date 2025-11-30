@@ -109,11 +109,12 @@ function generatePortfolioSummarySheet(workbook, portfolioData, holdingsTotalMar
       // Color the market value cell based on comparison with holdings total
       if (holdingsTotalMarketValue !== null) {
         const marketValueCell = totalRow.getCell(3);
-        const tolerance = 0.01; // Allow 1 paisa difference due to rounding
-        const difference = Math.abs(portfolioData.total.marketValue - holdingsTotalMarketValue);
+        // Compare integer parts only (ignore decimal differences)
+        const portfolioInteger = Math.floor(portfolioData.total.marketValue);
+        const holdingsInteger = Math.floor(holdingsTotalMarketValue);
         
-        if (difference <= tolerance) {
-          // Green if values match
+        if (portfolioInteger === holdingsInteger) {
+          // Green if integer parts match (decimal differences ignored)
           marketValueCell.fill = {
             type: 'pattern',
             pattern: 'solid',
@@ -121,7 +122,7 @@ function generatePortfolioSummarySheet(workbook, portfolioData, holdingsTotalMar
           };
           marketValueCell.font = { bold: true, color: { argb: 'FF006400' } }; // Dark green text
         } else {
-          // Red if values don't match
+          // Red if integer parts don't match
           marketValueCell.fill = {
             type: 'pattern',
             pattern: 'solid',
