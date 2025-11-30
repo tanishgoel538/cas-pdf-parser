@@ -125,8 +125,6 @@ router.post('/extract-cas-batch', upload.array('pdfs', 50), async (req, res) => 
           outputFile: fileName
         });
         
-        console.log(`✓ Successfully processed: ${file.originalname}`);
-        
       } catch (error) {
         console.error(`✗ Failed to process ${file.originalname}:`, error.message);
         

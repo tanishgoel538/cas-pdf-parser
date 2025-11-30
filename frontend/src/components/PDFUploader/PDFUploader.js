@@ -35,6 +35,7 @@ const PDFUploader = ({ darkMode }) => {
   const [filePasswords, setFilePasswords] = useState({});
   const [validationStatus, setValidationStatus] = useState({});
   const [isValidating, setIsValidating] = useState(false);
+  const [sheetsApiKey, setSheetsApiKey] = useState(''); // API key for Google Sheets append
 
   const { history, addHistoryItem, clearHistory, removeHistoryItem } = useUploadHistory();
 
@@ -241,6 +242,11 @@ const PDFUploader = ({ darkMode }) => {
         const sheets = Object.keys(selectedSheets).filter(key => selectedSheets[key]);
         formData.append('sheets', JSON.stringify(sheets));
       }
+      
+      // Add API key if provided (for Google Sheets append)
+      if (sheetsApiKey) {
+        formData.append('sheetsApiKey', sheetsApiKey);
+      }
 
       const response = await extractCASData(formData, (progressEvent) => {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -403,6 +409,11 @@ const PDFUploader = ({ darkMode }) => {
       if (outputFormat === OUTPUT_FORMATS.EXCEL) {
         const sheets = Object.keys(selectedSheets).filter(key => selectedSheets[key]);
         formData.append('sheets', JSON.stringify(sheets));
+      }
+      
+      // Add API key if provided (for Google Sheets append)
+      if (sheetsApiKey) {
+        formData.append('sheetsApiKey', sheetsApiKey);
       }
 
       const response = await extractCASDataBatch(formData, (progressEvent) => {
@@ -578,13 +589,43 @@ const PDFUploader = ({ darkMode }) => {
             />
 
             {currentFile && (
-              <PasswordInput
-                password={password}
-                showPassword={showPassword}
-                loading={loading}
-                onPasswordChange={(e) => setPassword(e.target.value)}
-                onToggleShow={() => setShowPassword(!showPassword)}
-              />
+              <>
+                <PasswordInput
+                  password={password}
+                  showPassword={showPassword}
+                  loading={loading}
+                  onPasswordChange={(e) => setPassword(e.target.value)}
+                  onToggleShow={() => setShowPassword(!showPassword)}
+                />
+                
+                {/* API Key for Google Sheets (Optional) */}
+                <div className="api-key-input" style={{ marginTop: '12px' }}>
+                  <input
+                    type="password"
+                    placeholder="Google Sheets API Key"
+                    value={sheetsApiKey}
+                    onChange={(e) => setSheetsApiKey(e.target.value)}
+                    disabled={loading}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      backgroundColor: darkMode ? '#2a2a2a' : '#fff',
+                      color: darkMode ? '#fff' : '#000'
+                    }}
+                  />
+                  <small style={{ 
+                    display: 'block', 
+                    marginTop: '4px', 
+                    color: darkMode ? '#888' : '#666',
+                    fontSize: '12px'
+                  }}>
+                    Leave empty if you don't need Google Sheets tracking
+                  </small>
+                </div>
+              </>
             )}
           </>
         ) : (

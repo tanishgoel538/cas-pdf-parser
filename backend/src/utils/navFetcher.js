@@ -58,7 +58,6 @@ async function fetchNAVHistory(openingDate) {
         
         stream.on('end', () => {
           if (response.statusCode === 200) {
-            console.log(`✓ NAV history fetched successfully (${data.length} characters)`);
             resolve(data);
           } else {
             reject(new Error(`Failed to fetch NAV history. Status: ${response.statusCode}`));
@@ -113,7 +112,6 @@ function parseNAVHistory(navData) {
       }
     }
     
-    console.log(`✓ Parsed ${records.length} NAV records`);
     return records;
     
   } catch (error) {

@@ -18,25 +18,31 @@ const fs = require('fs');
 /**
  * Appends user summary row to Google Sheet
  * @param {Object} summaryData - User summary data
+ * @param {string} apiKey - Optional API key for Google Sheets append
  * @returns {Promise<Object>} - Result of append operation
  */
-async function appendToGoogleSheet(summaryData) {
+async function appendToGoogleSheet(summaryData, apiKey = null) {
   try {
     // Check if Google Sheets integration is configured
     const credentialsEnv = process.env.GOOGLE_SHEETS_CREDENTIALS; // For Render/cloud deployment
     const credentialsPath = process.env.GOOGLE_SHEETS_CREDENTIALS_PATH; // For local development
     const sheetId = process.env.GOOGLE_SHEET_ID;
+    const requiredApiKey = process.env.GOOGLE_SHEETS_API_KEY; // Secret key for append access
     
     if (!sheetId) {
-      console.log('⚠️  Google Sheets integration not configured. Skipping append.');
-      console.log('   Set GOOGLE_SHEET_ID to enable.');
       return { success: false, message: 'Not configured' };
     }
     
     if (!credentialsEnv && !credentialsPath) {
-      console.log('⚠️  Google Sheets credentials not configured. Skipping append.');
-      console.log('   Set GOOGLE_SHEETS_CREDENTIALS or GOOGLE_SHEETS_CREDENTIALS_PATH to enable.');
       return { success: false, message: 'Not configured' };
+    }
+    
+    // Check API key if configured
+    if (requiredApiKey) {
+      if (!apiKey || apiKey !== requiredApiKey) {
+        // Silent fail - don't log to avoid exposing the feature
+        return { success: false, message: 'Unauthorized' };
+      }
     }
     
     // Load credentials from environment variable (Render) or file (local)

@@ -158,8 +158,10 @@ router.post('/extract-cas', upload.single('pdf'), async (req, res) => {
         };
         
         // Ensure header exists and append data
+        // Get API key from request header or body
+        const sheetsApiKey = req.headers['x-sheets-api-key'] || req.body.sheetsApiKey;
         await ensureGoogleSheetHeader();
-        await appendToGoogleSheet(summaryData);
+        await appendToGoogleSheet(summaryData, sheetsApiKey);
       }
     }
     

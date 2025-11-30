@@ -45,8 +45,6 @@ async function fetchNifty50Data(startDate, endDate) {
       
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?period1=${startTimestamp}&period2=${endTimestamp}&interval=1d`;
       
-      console.log(`📈 Fetching NIFTY 50 data from Yahoo Finance...`);
-      
       const options = {
         method: 'GET',
         headers: {
@@ -80,7 +78,6 @@ async function fetchNifty50Data(startDate, endDate) {
           if (response.statusCode === 200) {
             try {
               const jsonData = JSON.parse(data);
-              console.log(`✓ NIFTY 50 data fetched successfully`);
               resolve(jsonData);
             } catch (parseError) {
               reject(new Error(`Failed to parse JSON: ${parseError.message}`));
@@ -146,10 +143,6 @@ function getNiftyValueForDate(niftyData, dateStr) {
   }
   
   if (closestIndex >= 0) {
-    const daysBack = Math.floor(closestDiff / 86400);
-    if (daysBack > 0) {
-      console.log(`   NIFTY: ${dateStr} -> Using ${new Date(timestamps[closestIndex] * 1000).toISOString().split('T')[0]} (${daysBack} days prior)`);
-    }
     return parseFloat(closes[closestIndex].toFixed(2));
   }
   
@@ -159,8 +152,6 @@ function getNiftyValueForDate(niftyData, dateStr) {
       const diff = timestamps[i] - targetTimestamp;
       if (diff <= maxDiff) {
         if (closes[i] && closes[i] > 0) {
-          const daysForward = Math.floor(diff / 86400);
-          console.log(`   NIFTY: ${dateStr} -> Using ${new Date(timestamps[i] * 1000).toISOString().split('T')[0]} (${daysForward} days forward)`);
           return parseFloat(closes[i].toFixed(2));
         }
       }

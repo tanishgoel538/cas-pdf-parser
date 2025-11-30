@@ -12,7 +12,6 @@ function extractDateRange(textContent) {
     const match = textContent.match(dateRangePattern);
     
     if (match) {
-        console.log("MATCH",match)
       return {
         openingDateRange: match[1],
         closingDateRange: match[2],

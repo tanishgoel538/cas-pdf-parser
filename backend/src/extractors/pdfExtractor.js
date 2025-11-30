@@ -30,7 +30,6 @@ async function extractTextFromPDF(pdfPath, password = null) {
 
     // Get document info (including total pages)
     const info = await parser.getInfo();
-    console.log(`✓ PDF parsed successfully. Total pages: ${info.total}`);
     
     // Extract text from the document
     const textResult = await parser.getText();
@@ -42,8 +41,6 @@ async function extractTextFromPDF(pdfPath, password = null) {
     content += `Extraction Date: ${new Date().toLocaleString()}\n`;
     content += `${'='.repeat(50)}\n\n`;
     content += textResult.text;
-
-    console.log(`✓ Extracted ${content.length} characters`);
 
     return content;
 
