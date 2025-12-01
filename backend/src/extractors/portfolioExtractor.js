@@ -25,7 +25,12 @@ function extractPortfolioSummary(textContent) {
   const portfolioEnd = transactionStart !== -1 ? transactionStart : textContent.length;
   
   // Extract only the portfolio section
-  const portfolioSection = textContent.substring(portfolioStart, portfolioEnd);
+  let portfolioSection = textContent.substring(portfolioStart, portfolioEnd);
+  
+  // Fix concatenated entries: Split on EQUITY/DEBT keywords that appear mid-line
+  // This handles cases where PDF parsing doesn't preserve line breaks
+  portfolioSection = portfolioSection.replace(/([^\n])(EQUITY|DEBT|HYBRID)/g, '$1\n$2');
+  
   const lines = portfolioSection.split('\n');
   
   // Process lines (skip first line which is the header)

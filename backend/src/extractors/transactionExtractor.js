@@ -584,6 +584,8 @@ function parseTransactions(folioText) {
 // Parse folios from fund section
 function parseFolios(fundSectionText) {
   const folios = [];
+  
+  // Primary method: Split by PAN pattern
   const panPattern = /^PAN:\s*([A-Z]{5}[0-9]{4}[A-Z])/gm;
   const panMatches = [];
   let match;
@@ -592,11 +594,27 @@ function parseFolios(fundSectionText) {
     panMatches.push(match.index);
   }
   
-  if (panMatches.length === 0) return folios;
+  // Fallback method: If no PAN found, split by ISIN pattern (for folios without PAN)
+  // Pattern: scheme code followed by dash and fund name with ISIN
+  const isinPattern = /^[A-Z0-9]+-[^\n]+ - ISIN: [A-Z0-9]+/gm;
+  const isinMatches = [];
   
-  for (let i = 0; i < panMatches.length; i++) {
-    const startIndex = panMatches[i];
-    const endIndex = i < panMatches.length - 1 ? panMatches[i + 1] : fundSectionText.length;
+  while ((match = isinPattern.exec(fundSectionText)) !== null) {
+    // Only add if not already covered by a PAN match
+    const isNearPAN = panMatches.some(panIdx => Math.abs(match.index - panIdx) < 200);
+    if (!isNearPAN) {
+      isinMatches.push(match.index);
+    }
+  }
+  
+  // Combine and sort all folio start positions
+  const allMatches = [...panMatches, ...isinMatches].sort((a, b) => a - b);
+  
+  if (allMatches.length === 0) return folios;
+  
+  for (let i = 0; i < allMatches.length; i++) {
+    const startIndex = allMatches[i];
+    const endIndex = i < allMatches.length - 1 ? allMatches[i + 1] : fundSectionText.length;
     const folioText = fundSectionText.substring(startIndex, endIndex);
     
     const { pan, kycStatus } = extractPANAndKYC(folioText);
@@ -664,6 +682,10 @@ function locateFundSections(fileContent, fundNames) {
 // Main extraction function
 function extractFundTransactions(textContent, portfolioData) {
   try {
+    // Fix concatenated entries: Split on EQUITY/DEBT keywords that appear mid-line
+    // This handles cases where PDF parsing doesn't preserve line breaks
+    textContent = textContent.replace(/([^\n])(EQUITY|DEBT|HYBRID)/g, '$1\n$2');
+    
     const fundNames = portfolioData.portfolioSummary.map(fund => fund.fundName);
     const fundSections = locateFundSections(textContent, fundNames);
     
